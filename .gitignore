@@ -1,0 +1,12 @@
+# Archivos de compilación
+target/
+*.class
+
+# Configuración de IDEs
+.idea/
+.vscode/
+*.iml
+
+# Archivos de entorno
+.env
+application.properties
