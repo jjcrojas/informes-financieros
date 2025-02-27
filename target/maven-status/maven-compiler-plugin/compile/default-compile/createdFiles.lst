@@ -1,0 +1,5 @@
+controller\TeradataController.class
+controller\MainApplication.class
+controller\TeradataService.class
+controller\ReporteController.class
+controller\TeradataConfig.class
