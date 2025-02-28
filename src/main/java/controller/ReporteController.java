@@ -15,11 +15,31 @@ public class ReporteController {
     public ReporteController(TeradataService teradataService) {
         this.teradataService = teradataService;
     }
-	
+    
+    @GetMapping("/reportes/financieros/datos")
+    public String obtenerDatosInFFin(
+            @RequestParam(name = "codigoEntidad") int codigoEntidad,
+            @RequestParam(name = "fechaMayor") String fechaMayor,
+            Model model) {
+
+        List<Map<String, Object>> datosReporte = teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+        model.addAttribute("datosReporte", datosReporte);
+        model.addAttribute("codigoEntidad", codigoEntidad);
+        model.addAttribute("fechaMayor", fechaMayor);
+
+        return "reportes/financieros"; 
+    }
+    
+	@GetMapping("/reportes/financieros")
+    public String mostrarFormularioInfFin(Model model) {
+        return "reportes/financieros"; // Nombre del archivo en /templates/reportes/financieros.html
+    } 
+    
     @GetMapping("/reportes/balance")
     public String mostrarFormularioBalance(Model model) {
         return "reportes/balance"; // Nombre del archivo en /templates/reportes/balance.html
     }
+
     
     @GetMapping("/reportes/balance/datos")
     public String obtenerDatosBalance(

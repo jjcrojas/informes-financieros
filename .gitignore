@@ -10,3 +10,4 @@ target/
 # Archivos de entorno
 .env
 application.properties
+src/main/resources/application.properties
