@@ -46,8 +46,8 @@
                     <td th:text="${fila['Grupo']}"></td>
                     <td th:text="${fila['Cuenta']}"></td>
                     <td th:text="${fila['Subcuenta']}"></td>
-                    <td th:text="${fila['Valor_Actual_Millones']}"></td>
-                    <td th:text="${fila['Valor_Anterior_Millones']}"></td>
+                    <td th:text="${#numbers.formatDecimal(fila['Valor_Actual_Millones'], 1, 2, 'COMMA')}"></td>
+                    <td th:text="${#numbers.formatDecimal(fila['Valor_Anterior_Millones'], 1, 2, 'COMMA')}"></td>
                 </tr>
             </tbody>
         </table>

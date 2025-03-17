@@ -1,5 +1,6 @@
-controller\TeradataController.class
-controller\MainApplication.class
-controller\TeradataService.class
-controller\ReporteController.class
-controller\TeradataConfig.class
+co\gov\sfc\infdinamicos\service\TeradataService.class
+co\gov\sfc\infdinamicos\MainApplication.class
+co\gov\sfc\infdinamicos\controller\HomeController.class
+co\gov\sfc\infdinamicos\controller\TeradataController.class
+co\gov\sfc\infdinamicos\controller\ReporteController.class
+co\gov\sfc\infdinamicos\config\TeradataConfig.class
