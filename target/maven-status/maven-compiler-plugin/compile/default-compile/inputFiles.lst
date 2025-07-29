@@ -1,6 +1,8 @@
-D:\OneDrive - Superfinanciera\Pensiones\app\InformesDinamicos\inf_fin-app\src\main\java\co\gov\sfc\infdinamicos\controller\HomeController.java
-D:\OneDrive - Superfinanciera\Pensiones\app\InformesDinamicos\inf_fin-app\src\main\java\co\gov\sfc\infdinamicos\MainApplication.java
-D:\OneDrive - Superfinanciera\Pensiones\app\InformesDinamicos\inf_fin-app\src\main\java\co\gov\sfc\infdinamicos\controller\ReporteController.java
-D:\OneDrive - Superfinanciera\Pensiones\app\InformesDinamicos\inf_fin-app\src\main\java\co\gov\sfc\infdinamicos\controller\TeradataController.java
-D:\OneDrive - Superfinanciera\Pensiones\app\InformesDinamicos\inf_fin-app\src\main\java\co\gov\sfc\infdinamicos\config\TeradataConfig.java
-D:\OneDrive - Superfinanciera\Pensiones\app\InformesDinamicos\inf_fin-app\src\main\java\co\gov\sfc\infdinamicos\service\TeradataService.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\controller\ReporteController.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\model\CuentaEstadoResultados.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\controller\HomeController.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\service\TeradataService.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\MainApplication.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\service\EstadoResultadosService.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\config\TeradataConfig.java
+D:\app\InformesFinancieros\src\main\java\co\gov\sfc\infdinamicos\controller\TeradataController.java

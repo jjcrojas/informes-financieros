@@ -1,5 +1,7 @@
 package co.gov.sfc.infdinamicos.controller;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -20,42 +22,78 @@ public class ReporteController {
         this.teradataService = teradataService;
     }
     
-    @GetMapping("/reportes/financieros/datos")
-    public String obtenerDatosInFFin(
+    //Pide código de entidad y fecha de Estado de Resultados
+    @GetMapping("/reportes/financieros-estado-resultados")
+    public String mostrarFormularioBalanceYEstadoResultados(Model model) {
+        return "reportes/financieros"; // Nombre del archivo en /templates/reportes/balance.html
+    }
+
+    /**/
+    //Muestra datos de Estado de Resultados según código de entidad y fecha
+	@GetMapping("/reportes/financieros-estado-resultados/datos")
+	public String obtenerDatosBalanceYEstadoResultados(
             @RequestParam(name = "codigoEntidad") int codigoEntidad,
             @RequestParam(name = "fechaMayor") String fechaMayor,
             Model model) {
 
-        List<Map<String, Object>> datosReporte = teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+		List<Map<String, Object>> datosReporte = teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+		List<Map<String, Object>> estadoResultados = teradataService.obtenerEstadoResultados(codigoEntidad, fechaMayor);
         model.addAttribute("datosReporte", datosReporte);
+		model.addAttribute("estadoResultados", estadoResultados);
         model.addAttribute("codigoEntidad", codigoEntidad);
         model.addAttribute("fechaMayor", fechaMayor);
 
-        return "reportes/financieros"; 
-    }
+        return "/reportes/financieros";
+	}    
+    /**/
     
-	@GetMapping("/reportes/financieros")
-    public String mostrarFormularioInfFin(Model model) {
-        return "reportes/financieros"; // Nombre del archivo en /templates/reportes/financieros.html
-    } 
     
-    @GetMapping("/reportes/balance")
+	/*
+	 * @GetMapping("/reportes/financieros/datos") public String obtenerDatosInFFin(
+	 * 
+	 * @RequestParam(name = "codigoEntidad") int codigoEntidad,
+	 * 
+	 * @RequestParam(name = "fechaMayor") String fechaMayor, Model model) {
+	 * 
+	 * List<Map<String, Object>> datosReporte =
+	 * teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+	 * model.addAttribute("datosReporte", datosReporte);
+	 * model.addAttribute("codigoEntidad", codigoEntidad);
+	 * model.addAttribute("fechaMayor", fechaMayor);
+	 * 
+	 * return "reportes/financieros"; }
+	 */
+    
+    //
+	/*
+	 * @GetMapping("/reportes/financieros") public String
+	 * mostrarFormularioInfFin(Model model) { return "reportes/financieros"; //
+	 * Nombre del archivo en /templates/reportes/financieros.html }
+	 */
+    
+	//Pide código de entidad y fecha
+    @GetMapping("/reportes/cuif")
     public String mostrarFormularioBalance(Model model) {
-        return "reportes/balance"; // Nombre del archivo en /templates/reportes/balance.html
+        return "reportes/cuif"; // Nombre del archivo en /templates/reportes/balance.html
     }
 
-    
-    @GetMapping("/reportes/balance/datos")
+    //Muestra datos según código de entidad y fecha
+    @GetMapping("/reportes/cuif/datos")
     public String obtenerDatosBalance(
             @RequestParam(name = "codigoEntidad") int codigoEntidad,
             @RequestParam(name = "fechaMayor") String fechaMayor,
             Model model) {
 
-		List<Map<String, Object>> datosBalance = teradataService.obtenerBalance(codigoEntidad, fechaMayor);
+        List<Map<String, Object>> datosBalance = teradataService.obtenerBalance(codigoEntidad, fechaMayor);
+
+        String fechaMenor = teradataService.calcularFechaMenor(fechaMayor);
+
         model.addAttribute("datosBalance", datosBalance);
         model.addAttribute("codigoEntidad", codigoEntidad);
         model.addAttribute("fechaMayor", fechaMayor);
+        model.addAttribute("fechaMenor", fechaMenor);
 
-        return "reportes/balance";
+        return "reportes/cuif";
     }
+
 }    

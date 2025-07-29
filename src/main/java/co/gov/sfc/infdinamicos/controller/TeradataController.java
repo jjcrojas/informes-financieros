@@ -16,6 +16,7 @@ import co.gov.sfc.infdinamicos.service.TeradataService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,13 +35,29 @@ public class TeradataController {
 		return teradataService.obtenerDatosPrueba();
 	}
 
+	@GetMapping("/balance-estado-resultados")
+	public ResponseEntity<Map<String, Object>> obtenerBalanceYEstadoResultados(
+			@RequestParam(name = "codigoEntidad") int codigoEntidad, 
+	        @RequestParam(name = "fechaMayor") String fechaMayor) {
+
+	    List<Map<String, Object>> datosReporte = teradataService.obtenerReporteFinanciero(codigoEntidad,fechaMayor);
+	    List<Map<String, Object>> estadoResultados = teradataService.obtenerEstadoResultados(codigoEntidad,fechaMayor);
+
+	    Map<String, Object> response = new HashMap<>();
+	    response.put("balance", datosReporte);
+	    response.put("estadoResultados", estadoResultados);
+
+	    return ResponseEntity.ok(response);
+	}
+
+	
 	@GetMapping("/api/teradata/reporte")
 	public List<Map<String, Object>> obtenerReporte(@RequestParam(name = "codigoEntidad") int codigoEntidad,
 			@RequestParam(name = "fechaMayor") String fechaMayor) {
 		return teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
 	}
 
-	@GetMapping("/balance")
+	@GetMapping("/cuif")
 	public List<Map<String, Object>> obtenerBalance(@RequestParam(name = "codigoEntidad") int codigoEntidad,
 			@RequestParam(name = "fechaMayor") String fechaMayor) {
 		return teradataService.obtenerBalance(codigoEntidad, fechaMayor);
@@ -112,7 +129,7 @@ public class TeradataController {
     }
 
 
-	@GetMapping("/balance/excel")
+	@GetMapping("/cuif/excel")
 	public ResponseEntity<byte[]> descargarReporteExcel(@RequestParam(name = "codigoEntidad") int codigoEntidad,
 			@RequestParam(name = "fechaMayor") String fechaMayor) {
 

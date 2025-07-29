@@ -1,13 +1,12 @@
-# Archivos de compilación
-target/
+/target/
 *.class
-
-# Configuración de IDEs
-.idea/
-.vscode/
+*.log
 *.iml
+*.classpath
+*.project
+.settings/
+.idea/
+.DS_Store
+Thumbs.db
 
-# Archivos de entorno
-.env
-application.properties
-src/main/resources/application.properties
+
