@@ -3,6 +3,7 @@ package co.gov.sfc.infdinamicos.controller;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.springframework.stereotype.Controller;
@@ -41,8 +42,16 @@ public class ReporteController {
         model.addAttribute("datosReporte", datosReporte);
 		model.addAttribute("estadoResultados", estadoResultados);
         model.addAttribute("codigoEntidad", codigoEntidad);
-        model.addAttribute("fechaMayor", fechaMayor);
-
+        
+        String fechaMenorStr = teradataService.calcularFechaMenor(fechaMayor);  
+        LocalDate fechaMenor = LocalDate.parse(fechaMenorStr); // Convertir a LocalDate
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es"));
+        String fechaMenorFormateada = fechaMenor.format(formatter);
+        model.addAttribute("fechaMenorFormateada", fechaMenorFormateada);
+        
+        LocalDate fecha = LocalDate.parse(fechaMayor);
+        String fechaFormateada = fecha.format(formatter);
+        model.addAttribute("fechaFormateada", fechaFormateada); // nuevo atributo
         return "/reportes/financieros";
 	}    
     /**/

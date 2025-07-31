@@ -1,0 +1,9 @@
+.fila-clase {
+    font-weight: bold;
+    background-color: #f2f2f2; /* Opcional: fondo claro */
+}
+.texto-nota {
+    font-size: 0.9em;
+    font-style: italic;
+    color: #555;
+}
