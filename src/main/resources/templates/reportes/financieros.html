@@ -9,6 +9,10 @@
 	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 <link rel="stylesheet" th:href="@{/css/estilos.css}">
 
+<!-- Flatpickr CSS -->
+<link rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
 </head>
 <script>
 	document.addEventListener("DOMContentLoaded", function() {
@@ -28,7 +32,7 @@
 	<h2 class="text-center">Reporte Financiero</h2>
 
 	<!-- Formulario para ingresar Código de Entidad y Fecha -->
-	<form class="mt-3" method="GET"
+	<form id="formularioReporte" class="mt-3" method="GET"
 		action="/reportes/financieros-estado-resultados/datos">
 		<div class="mb-3">
 			<label for="codigoEntidad" class="form-label">Código de
@@ -40,8 +44,18 @@
 				type="date" class="form-control" id="fechaMayor" name="fechaMayor"
 				required>
 		</div>
-		<button type="submit" class="btn btn-primary">Consultar
+		<button type="submit" class="btn btn-primary" id="btnConsultar">Consultar
 			Reporte</button>
+		<div id="spinner" class="text-center mt-3" style="display: none;">
+
+
+			<!-- Indicador de progreso -->
+			<div class="spinner-border text-primary" role="status">
+				<span class="visually-hidden">Cargando...</span>
+			</div>
+			<p>Cargando reporte, por favor espere...</p>
+		</div>
+
 	</form>
 
 	<!-- Mostrar la tabla solo si hay datos -->
@@ -54,8 +68,7 @@
 					<th>Nombre Cuenta</th>
 					<th>Código PUC</th>
 					<th th:text="${fechaFormateada}">Valor Actual</th>
-					<th th:text="${fechaMenorFormateada}">Valor
-						Anterior</th>
+					<th th:text="${fechaMenorFormateada}">Valor Anterior</th>
 					<th>% Participación</th>
 					<th>Variación Anual</th>
 				</tr>
@@ -107,5 +120,27 @@
 			</tbody>
 		</table>
 	</div>
+	<!-- Flatpickr -->
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+
+	<script>
+		// Solo habilita días fin de mes
+		flatpickr("#fechaMayor", {
+			dateFormat : "Y-m-d",
+			locale : "es",
+			disable : [ function(date) {
+				const nextDay = new Date(date);
+				nextDay.setDate(date.getDate() + 1);
+				return nextDay.getMonth() === date.getMonth();
+			} ]
+		});
+		document.getElementById("formularioReporte").addEventListener("submit",
+				function() {
+					document.getElementById("btnConsultar").disabled = true;
+					document.getElementById("spinner").style.display = "block";
+				});
+	</script>
+
 </body>
 </html>

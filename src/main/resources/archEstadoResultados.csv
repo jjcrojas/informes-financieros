@@ -1,57 +1,54 @@
-ordencat;categoria;ordengru;grupo;signo;cuenta;Nombre
-1;ingresos;1;Comisiones Pensiones Obligatorias;+;411528;DE ADMINISTRACION FONDO DE PENSIONES OBL
-1;ingresos;1;Comisiones Pensiones Obligatorias;+;411530;DE ADMINISTRACION PENSIONES POR RETIRO P
-1;ingresos;1;Comisiones Pensiones Obligatorias;+;411532;DE ADMINISTRACION RECURSOS AFILIADOS CES
-1;ingresos;1;Comisiones Pensiones Obligatorias;+;411534;POR TRASLADO DE AFILIADOS
-1;ingresos;1;Comisiones Pensiones Obligatorias;+;411536;ADMINISTRACION APORTES VOLUNTARIOS FONDO
-1;ingresos;2;Comisiones Pensiones Voluntarias;+;411538;DE ADMINISTRACION FONDO DE PENSIONES VOL
-1;ingresos;3;Comisiones Cesantias;+;411520;DE ADMINISTRACION-FONDO DE CESANTIA PORT
-1;ingresos;3;Comisiones Cesantias;+;411522;DE ADMINISTRACION-FONDO DE CESANTIA PORT
-1;ingresos;3;Comisiones Cesantias;+;411524;POR RETIROS PARCIALES-FONDO DE CESANTIA 
-1;ingresos;3;Comisiones Cesantias;+;411526;POR RETIROS PARCIALES-FONDO DE CESANTIA 
-1;ingresos;4;Comisiones Otras;+;411540;DE ADMINISTRACION PASIVOS PENSIONALES EN
-1;ingresos;4;Comisiones Otras;+;411595;OTRAS
-1;ingresos;5;"Por valoraci贸n de inversiones; de contado y derivados";+;410700;POR VALORACION DE INVERSIONES A VALOR RA
-1;ingresos;5;"Por valoraci贸n de inversiones; de contado y derivados";+;410800;POR VALORACION DE INVERSIONES A VALOR RA
-1;ingresos;5;"Por valoraci贸n de inversiones; de contado y derivados";+;411100;POR VALORACION A COSTO AMORTIZADO DE INV
-1;ingresos;5;"Por valoraci贸n de inversiones; de contado y derivados";+;412800;VALORACION DE OPERACIONES DE CONTADO
-1;ingresos;5;"Por valoraci贸n de inversiones; de contado y derivados";+;412900;VALORACION DE DERIVADOS - DE NEGOCIACION
-1;ingresos;5;"Por valoraci贸n de inversiones; de contado y derivados";+;413900;VALORACION DE DERIVADOS - DE COBERTURA
-1;ingresos;6;Por valoraci贸n de posiciones en corto y venta inver;+;412500;POR VENTA DE INVERSIONES
-1;ingresos;7;Financieros por operaciones del mercado monetario;+;410300;INGRESOS FINANCIEROS OPERACIONES DEL MER
-1;ingresos;8;Por M茅todo de Participaci贸n Patrimonial;+;415000;POR EL METODO DE PARTICIPACION PATRIMONI
-1;ingresos;9;Cambios;+;413500;CAMBIOS
-1;ingresos;10;Otros ingresos;+;414500;ARRENDAMIENTOS
-1;ingresos;10;Otros ingresos;+;415500;ACTIVIDADES EN OPERACIONES CONJUNTAS
-1;ingresos;10;Otros ingresos;+;419100;RECUPERACIONES RIESGO OPERATIVO
-1;ingresos;10;Otros ingresos;+;419500;DIVERSOS
-2;gastos;1;Intereses cr茅ditos de bancos y obligaciones financieras;+;510300;INTERESES CREDITOS DE BANCOS Y OTRAS OBL
-2;gastos;2;"Por valoraci贸n de inversiones; de contado y derivados";+;510600;VALORACION INVERSIONES A VALOR RAZONABLE
-2;gastos;2;"Por valoraci贸n de inversiones; de contado y derivados";+;510700;POR VALORACION A COSTO AMORTIZADO DE INV
-2;gastos;2;"Por valoraci贸n de inversiones; de contado y derivados";+;510800;VALORACION DE INVERSIONES A VALOR RAZONA
-2;gastos;2;"Por valoraci贸n de inversiones; de contado y derivados";+;512800;PERDIDA EN LA VALORACION DE OPERACIONES 
-2;gastos;2;"Por valoraci贸n de inversiones; de contado y derivados";+;512900;VALORACION DE DERIVADOS # DE NEGOCIACION
-2;gastos;2;"Por valoraci贸n de inversiones; de contado y derivados";+;513900;POR VALORACION DE DERIVADOS # DE COBERTU
-2;gastos;3;Por valoraci贸n de posiciones en corto y venta inver;+;512500;POR VENTA DE INVERSIONES
-2;gastos;4;Comisiones y honorarios;+;511500;COMISIONES
-2;gastos;4;Comisiones y honorarios;+;513000;HONORARIOS
-2;gastos;5;Beneficios a empleados;+;512000;BENEFICIOS A EMPLEADOS
-2;gastos;6;Cambios;+;513500;CAMBIOS
-2;gastos;7;Mantenimiento y reparaciones;+;516000;MANTENIMIENTO Y REPARACIONES
-2;gastos;8;Deterioro;+;517000;DETERIORO (PROVISIONES)
-2;gastos;9;Impuesto de renta;+;518000;AMORTIZACION DE ACTIVOS INTANGIBLES
-2;gastos;10;Otros;+;510400;FINANCIEROS POR OPERACIONES DEL MERCADO 
-2;gastos;10;Otros;+;511800;LEGALES
-2;gastos;10;Otros;+;513300;PERDIDA POR SINIESTROS-RIESGO OPERATIVO
-2;gastos;10;Otros;+;514000;IMPUESTOS Y TASAS
-2;gastos;10;Otros;+;514500;ARRENDAMIENTOS
-2;gastos;10;Otros;+;515000;"CONTRIBUCIONES; AFILIACIONES Y TRANSFERE"
-2;gastos;10;Otros;+;515500;SEGUROS
-2;gastos;10;Otros;+;516500;ADECUACION E INSTALACION
-2;gastos;10;Otros;+;516600;ACTIVIDADES EN OPERACIONES CONJUNTAS
-2;gastos;10;Otros;+;517200;"MULTAS Y SANCIONES; LITIGIOS; INDEMNIZAC"
-2;gastos;10;Otros;+;517500;DEPRECIACION DE LA PPE
-2;gastos;10;Otros;+;517800;DEPRECIACION DE PPE POR DERECHOS DE USO
-2;gastos;10;Otros;+;518000;AMORTIZACION DE ACTIVOS INTANGIBLES
-2;gastos;10;Otros;+;519000;DIVERSOS
-2;gastos;11;Ganancias (excedentes) y p茅rdidas;+;590000;GANANCIAS (EXCEDENTES) Y PERDIDAS
+ordencat,categoria,ordengru,grupo,signo,cuenta,Nombre
+1,ingresos,1,Comisiones Pensiones Obligatorias,+,411528,DE ADMINISTRACION FONDO DE PENSIONES OBL
+1,ingresos,1,Comisiones Pensiones Obligatorias,+,411530,DE ADMINISTRACION PENSIONES POR RETIRO P
+1,ingresos,1,Comisiones Pensiones Obligatorias,+,411532,DE ADMINISTRACION RECURSOS AFILIADOS CES
+1,ingresos,1,Comisiones Pensiones Obligatorias,+,411534,POR TRASLADO DE AFILIADOS
+1,ingresos,1,Comisiones Pensiones Obligatorias,+,411536,ADMINISTRACION APORTES VOLUNTARIOS FONDO
+1,ingresos,2,Comisiones Pensiones Voluntarias,+,411538,DE ADMINISTRACION FONDO DE PENSIONES VOL
+1,ingresos,3,Comisiones Cesantias,+,411520,DE ADMINISTRACION-FONDO DE CESANTIA PORT
+1,ingresos,3,Comisiones Cesantias,+,411522,DE ADMINISTRACION-FONDO DE CESANTIA PORT
+1,ingresos,3,Comisiones Cesantias,+,411524,POR RETIROS PARCIALES-FONDO DE CESANTIA 
+1,ingresos,3,Comisiones Cesantias,+,411526,POR RETIROS PARCIALES-FONDO DE CESANTIA 
+1,ingresos,4,Comisiones Otras,+,411540,DE ADMINISTRACION PASIVOS PENSIONALES EN
+2,ingresos,4,Comisiones Otras,+,411542,DE ADMINISTRACION PASIVOS PENSIONALES EN
+3,ingresos,4,Comisiones Otras,+,411546,DE ADMINISTRACION PASIVOS PENSIONALES EN
+1,ingresos,4,Comisiones Otras,+,411595,OTRAS
+1,ingresos,5,Por valoraci髇 de inversiones, de contado y derivados ,+,410700,POR VALORACION DE INVERSIONES A VALOR RA
+1,ingresos,5,Por valoraci髇 de inversiones, de contado y derivados ,+,410800,POR VALORACION DE INVERSIONES A VALOR RA
+1,ingresos,5,Por valoraci髇 de inversiones, de contado y derivados ,+,411100,POR VALORACION A COSTO AMORTIZADO DE INV
+1,ingresos,5,Por valoraci髇 de inversiones, de contado y derivados ,+,412800,VALORACION DE OPERACIONES DE CONTADO
+1,ingresos,5,Por valoraci髇 de inversiones, de contado y derivados ,+,412900,VALORACION DE DERIVADOS - DE NEGOCIACION
+1,ingresos,5,Por valoraci髇 de inversiones, de contado y derivados ,+,413900,VALORACION DE DERIVADOS - DE NEGOCIACION
+1,ingresos,6,Por valoraci髇 de posiciones en corto y venta inver,+,412300,VALORACION DE DERIVADOS - DE NEGOCIACION
+1,ingresos,6,Por valoraci髇 de posiciones en corto y venta inver,+,412500,VALORACION DE DERIVADOS - DE NEGOCIACION
+1,ingresos,7,Financieros por operaciones del mercado monetario ,+,410300,VALORACION DE DERIVADOS - DE NEGOCIACION
+1,ingresos,8,Por M閠odo de Participaci髇 Patrimonial ,+,415000,POR EL METODO DE PARTICIPACION PATRIMONI
+1,ingresos,9,Cambios,+,413500,CAMBIOS
+1,ingresos,10,Otros ingresos,+,413095,xx
+1,ingresos,10,Otros ingresos,+,413100,xxx
+1,ingresos,10,Otros ingresos,+,414000,xxxx
+1,ingresos,10,Otros ingresos,+,414500,ARRENDAMIENTOS
+1,ingresos,10,Otros ingresos,+,415500,ACTIVIDADES EN OPERACIONES CONJUNTAS
+1,ingresos,10,Otros ingresos,+,419100,RECUPERACIONES RIESGO OPERATIVO
+1,ingresos,10,Otros ingresos,+,419500,DIVERSOS
+1,ingresos,10,Otros ingresos,+,419800,xxxxxx
+2,gastos,1,Intereses cr閐itos de bancos y obligaciones financieras,+,510300,INTERESES CREDITOS DE BANCOS Y OTRAS OBL
+2,gastos,1,Intereses cr閐itos de bancos y obligaciones financieras,+,513000,xxxxxxxx
+2,gastos,2,Por valoraci髇 de inversiones, de contado y derivados ,+,510600,VALORACION INVERSIONES A VALOR RAZONABLE
+2,gastos,3,Por valoraci髇 de posiciones en corto y venta inver,+,512300,xxxxxxxxx
+2,gastos,4,Comisiones y honorarios,+,511500,COMISIONES
+2,gastos,5,Beneficios a empleados,+,512000,BENEFICIOS A EMPLEADOS
+2,gastos,5,Beneficios a empleados,+,517000,xxxxxxxxxxxxx
+2,gastos,6,Cambios,+,513500,CAMBIOS
+2,gastos,7,Mantenimiento y reparaciones,+,516000,MANTENIMIENTO Y REPARACIONES
+2,gastos,7,Mantenimiento y reparaciones,+,514000,xxxxxxxxxxxxxxx
+2,gastos,7,Mantenimiento y reparaciones,+,514500,aa
+2,gastos,7,Mantenimiento y reparaciones,+,515000,aaa
+2,gastos,7,Mantenimiento y reparaciones,+,515500,aaaa
+2,gastos,7,Mantenimiento y reparaciones,+,516500,aaaaa
+2,gastos,7,Mantenimiento y reparaciones,+,516600,b
+2,gastos,7,Mantenimiento y reparaciones,+,517200,bb
+2,gastos,7,Mantenimiento y reparaciones,+,517500,bbb
+2,gastos,8,Impuesto de renta ,+,570000,bbbb
+2,gastos,9,Otros,+,511800,bbbbb
+2,gastos,11,Ganancias (excedentes) y p閞didas,+,590000,GANANCIAS (EXCEDENTES) Y PERDIDAS
