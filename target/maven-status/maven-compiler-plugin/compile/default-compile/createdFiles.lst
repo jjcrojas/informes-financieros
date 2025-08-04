@@ -1,8 +1,0 @@
-co\gov\sfc\infdinamicos\controller\ControladorReportesAp.class
-co\gov\sfc\infdinamicos\service\EstadoResultadosService.class
-co\gov\sfc\infdinamicos\model\CuentaEstadoResultados.class
-co\gov\sfc\infdinamicos\controller\HomeController.class
-co\gov\sfc\infdinamicos\service\TeradataService.class
-co\gov\sfc\infdinamicos\MainApplication.class
-co\gov\sfc\infdinamicos\controller\ControladorFuncionalidadesAp.class
-co\gov\sfc\infdinamicos\config\TeradataConfig.class
