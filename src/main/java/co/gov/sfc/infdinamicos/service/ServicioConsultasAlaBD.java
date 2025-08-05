@@ -7,11 +7,14 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import co.gov.sfc.infdinamicos.model.CuentaEstadoResultados;
+import co.gov.sfc.infdinamicos.model.GrupoEstadoResultados;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -19,6 +22,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,32 +43,27 @@ public class ServicioConsultasAlaBD {
 		String sql = "SELECT TOP 10 * FROM PROD_DWH_CONSULTA.ENTIDADES";
 		return jdbcTemplate.queryForList(sql);
 	}
-
+	
 	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
-		
-		// Leer las cuentas desde el CSV como objetos CuentaEstadoResultados
-//		List<CuentaEstadoResultados> cuentas = cuentasDesdeArchivo
-//			    .leerCuentasDesdeCSV("archEstadoResultados.csv", true, ";", CuentaEstadoResultados.class);
 
-		// Agrupar cuentas por grupo
-//		Map<String, List<String>> gruposCuentas = cuentas.stream()
-//				.collect(Collectors.groupingBy(CuentaEstadoResultados::getGrupo,
-//						Collectors.mapping(CuentaEstadoResultados::getCuenta, Collectors.toList())));
-		// Leer grupos y cuentas desde CSV
-//	    Map<String, List<String>> gruposCuentas = cuentasDesdeArchivo.leerCodigosDesdeCSVConGrupo("archEstadoResultados.csv", true, ";", "ESTADO_RESULTADOS");
+	    Logger log = LoggerFactory.getLogger(getClass());
 
-	    Map<String, List<String>> gruposCuentas = cuentasDesdeArchivo.leerCodigosDesdeCSVConGrupo(
-	    	    "archEstadoResultados.csv", true, ";"
-	    	);
-	    
-		List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
+	    Map<String, GrupoEstadoResultados> gruposCuentas =
+	            cuentasDesdeArchivo.leerCodigosDesdeCSVConOrdencatYOrdengru(
+	                    "archEstadoResultados.csv", true, ";");
 
-		for (Map.Entry<String, List<String>> grupo : gruposCuentas.entrySet()) {
-			// Crear placeholders dinámicos: ?, ?, ?, ...
-			String placeholders = grupo.getValue().stream().map(c -> "?").collect(Collectors.joining(", "));
+	    List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
 
-			// Query con placeholders
-	        String query = "SELECT '" + grupo.getKey() + "' AS Grupo, " +
+	    for (Map.Entry<String, GrupoEstadoResultados> entry : gruposCuentas.entrySet()) {
+	        GrupoEstadoResultados grupoData = entry.getValue();
+	        String nombreGrupo = grupoData.getNombreGrupo();
+	        List<String> cuentas = grupoData.getCuentas();
+
+	        // Crear placeholders dinámicos
+	        String placeholders = cuentas.stream().map(c -> "?").collect(Collectors.joining(", "));
+
+	        // Query
+	        String query = "SELECT '" + nombreGrupo + "' AS Grupo, " +
 	                "SUM(ef.Saldo_Sincierre_Total_Moneda_0) AS total_saldo " +
 	                "FROM prod_dwh_consulta.estfin_indiv ef " +
 	                "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID " +
@@ -75,22 +74,94 @@ public class ServicioConsultasAlaBD {
 	                "AND E.Codigo_Entidad = ? " +
 	                "AND ef.Tipo_Informe = 0 " +
 	                "AND P.codigo IN (" + placeholders + ")";
-	        
-	        // Armar parámetros en el mismo orden que los placeholders
+
+	        // Parámetros
 	        List<Object> params = new ArrayList<>();
-//	        params.add(grupo.getKey());   // Primer placeholder: Grupo
-	        params.add(fecha);           // Segundo: Fecha
-	        params.add(codigoEntidad);   // Tercero: Código entidad
-	        params.addAll(grupo.getValue()); // Resto: cuentas	   
+	        params.add(fecha);
+	        params.add(codigoEntidad);
+	        params.addAll(cuentas);
+
+	        // Depuración
+//	        log.info("QUERY Estado Resultados para grupo [{}]:\n{}", nombreGrupo, query);
+//	        log.info("Parámetros: {}", params);
+
+	        if (log.isDebugEnabled()) {
+            String sqlDebug = query;
+            for (Object param : params) {
+                String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
+                sqlDebug = sqlDebug.replaceFirst("\\?", value);
+            }
+            log.debug("QUERY Estado Resultados DEBUG:\n{}", sqlDebug);
+        }
 	        
-	        System.out.println("QUERY Estado Resultados:\n" + query);
-
 	        List<Map<String, Object>> resultadoQuery = jdbcTemplate.queryForList(query, params.toArray());
-			filasDeEstadoResultados.addAll(resultadoQuery);
-		}
+	        filasDeEstadoResultados.addAll(resultadoQuery);
+	    }
 
-		return filasDeEstadoResultados;
+	    return filasDeEstadoResultados;
 	}
+
+
+//	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
+//		
+//
+//		Logger log = LoggerFactory.getLogger(getClass());
+//		
+//		Map<GrupoClave, List<String>> gruposCuentas =
+//			    cuentasDesdeArchivo.leerCodigosDesdeCSVConOrdenYNombre(
+//			        "archEstadoResultados.csv", true, ";"
+//			    );
+//	    
+//		// Ordenar por categoría y grupo
+//		List<Map.Entry<GrupoClave, List<String>>> listaOrdenada = gruposCuentas.entrySet()
+//		    .stream()
+//		    .sorted(Comparator
+//		        .comparing((Map.Entry<GrupoClave, List<String>> e) -> e.getKey().ordencat)
+//		        .thenComparing(e -> e.getKey().ordengru))
+//		    .toList();
+//
+//		List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
+//
+//		for (Map.Entry<GrupoClave, List<String>> grupo : listaOrdenada) {
+//			// Crear placeholders dinámicos: ?, ?, ?, ...
+//			String placeholders = grupo.getValue().stream().map(c -> "?").collect(Collectors.joining(", "));
+//
+//			// Query con placeholders
+//	        String query = "SELECT '" + grupo.getKey() + "' AS Grupo, " +
+//	                "SUM(ef.Saldo_Sincierre_Total_Moneda_0) AS total_saldo " +
+//	                "FROM prod_dwh_consulta.estfin_indiv ef " +
+//	                "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID " +
+//	                "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID " +
+//	                "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " +
+//	                "WHERE T.Fecha = ? " +
+//	                "AND E.Tipo_Entidad = 23 " +
+//	                "AND E.Codigo_Entidad = ? " +
+//	                "AND ef.Tipo_Informe = 0 " +
+//	                "AND P.codigo IN (" + placeholders + ")";
+//	        
+//	        // Armar parámetros en el mismo orden que los placeholders
+//	        List<Object> params = new ArrayList<>();
+//	        params.add(fecha);           
+//	        params.add(codigoEntidad);   
+//	        params.addAll(grupo.getValue()); 	   
+//	        
+////	        System.out.println("QUERY Estado Resultados:\n" + query);
+//	        // 💡 Construir SQL de depuración sustituyendo cada "?"
+//	        if (log.isDebugEnabled()) {
+//	            String sqlDebug = query;
+//	            for (Object param : params) {
+//	                String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
+//	                sqlDebug = sqlDebug.replaceFirst("\\?", value);
+//	            }
+//	            log.debug("QUERY Estado Resultados DEBUG:\n{}", sqlDebug);
+//	        }
+//
+//	        List<Map<String, Object>> resultadoQuery = jdbcTemplate.queryForList(query, params.toArray());
+//			filasDeEstadoResultados.addAll(resultadoQuery);
+//		}
+//
+//		return filasDeEstadoResultados;
+//	}
 
 	public List<Map<String, Object>> obtenerReporteFinanciero(int codigoEntidad, String fechaMayor) {
 		String fechaMenor = calcularFechaMenor(fechaMayor);

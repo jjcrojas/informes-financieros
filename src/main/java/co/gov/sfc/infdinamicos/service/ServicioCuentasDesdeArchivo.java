@@ -1,10 +1,14 @@
 package co.gov.sfc.infdinamicos.service;
 
 import co.gov.sfc.infdinamicos.model.CuentaEstadoResultados;
+import co.gov.sfc.infdinamicos.model.GrupoEstadoResultados;
+
 import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,6 +23,83 @@ public class ServicioCuentasDesdeArchivo {
 	 *
 	 * Sirve tanto para Estado de Resultados como para Balance, etc.
 	 */
+	
+	public Map<String, GrupoEstadoResultados> leerCodigosDesdeCSVConOrdencatYOrdengru(
+	        String nombreArchivo, boolean tieneEncabezado, String separador) {
+
+	    Map<String, GrupoEstadoResultados> mapa = new TreeMap<>((a, b) -> {
+	        // Ordena por ordencat y luego ordengru numéricamente
+	        String[] pa = a.split("-");
+	        String[] pb = b.split("-");
+	        int compCat = Integer.compare(Integer.parseInt(pa[0]), Integer.parseInt(pb[0]));
+	        if (compCat != 0) return compCat;
+	        return Integer.compare(Integer.parseInt(pa[1]), Integer.parseInt(pb[1]));
+	    });
+
+	    try (BufferedReader br = new BufferedReader(new FileReader("src/main/resources/" + nombreArchivo))) {
+	        String linea;
+	        if (tieneEncabezado) br.readLine(); // saltar encabezado
+
+	        while ((linea = br.readLine()) != null) {
+	            String[] cols = linea.split(separador);
+
+	            String ordencat = cols[0].trim();
+	            String ordengru = cols[2].trim();
+	            String nombreGrupo = cols[3].trim(); // Columna grupo
+	            String cuenta = cols[5].trim();
+
+	            String clave = ordencat + "-" + ordengru;
+
+	            mapa.putIfAbsent(clave, new GrupoEstadoResultados(nombreGrupo));
+	            mapa.get(clave).addCuenta(cuenta);
+	        }
+	    } catch (IOException e) {
+	        throw new RuntimeException("Error leyendo archivo: " + nombreArchivo, e);
+	    }
+
+	    return mapa;
+	}
+	
+	
+	public Map<GrupoClave, List<String>> leerCodigosDesdeCSVConOrdenYNombre(
+	        String archivo, boolean tieneCabecera, String separador) {
+
+	    Map<GrupoClave, List<String>> resultado = new LinkedHashMap<>();
+
+	    try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(archivo)) {
+	        if (inputStream == null) {
+	            throw new FileNotFoundException("No se encontró el archivo en resources: " + archivo);
+	        }
+
+	        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+	            String linea;
+	            boolean primera = true;
+
+	            while ((linea = br.readLine()) != null) {
+	                if (primera && tieneCabecera) {
+	                    primera = false;
+	                    continue;
+	                }
+
+	                String[] partes = linea.split(separador);
+
+	                String ordencat = partes[0].trim();
+	                String ordengru = partes[1].trim();
+	                String nombreGrupo = partes[2].trim();
+	                String cuenta = partes[5].trim(); // Ajusta índice si es diferente
+
+	                GrupoClave clave = new GrupoClave(ordencat, ordengru, nombreGrupo);
+
+	                resultado.computeIfAbsent(clave, k -> new ArrayList<>()).add(cuenta);
+	            }
+	        }
+	    } catch (IOException e) {
+	        throw new RuntimeException("Error leyendo archivo: " + archivo, e);
+	    }
+
+	    return resultado;
+	}
+
 	public Map<String, List<String>> leerCodigosDesdeCSVConGrupo(String nombreArchivo, boolean tieneEncabezado, String separador) {
 	    Map<String, List<String>> grupos = new LinkedHashMap<>();
 
