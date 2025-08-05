@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import co.gov.sfc.infdinamicos.model.CuentaEstadoResultados;
 import co.gov.sfc.infdinamicos.model.GrupoEstadoResultados;
 
 import java.io.ByteArrayOutputStream;
@@ -22,7 +21,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
