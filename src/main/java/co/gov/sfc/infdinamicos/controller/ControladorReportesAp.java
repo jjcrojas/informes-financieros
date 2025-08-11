@@ -17,10 +17,10 @@ import co.gov.sfc.infdinamicos.service.ServicioConsultasAlaBD;
 
 @Controller
 public class ControladorReportesAp {
-	private final ServicioConsultasAlaBD teradataService ;
+	private final ServicioConsultasAlaBD consultasAlaBD ;
 
-    public ControladorReportesAp(ServicioConsultasAlaBD teradataService) {
-        this.teradataService = teradataService;
+    public ControladorReportesAp(ServicioConsultasAlaBD consultasAlaBD) {
+        this.consultasAlaBD = consultasAlaBD;
     }
     
     //Pide código de entidad y fecha de Estado de Resultados
@@ -37,13 +37,13 @@ public class ControladorReportesAp {
             @RequestParam(name = "fechaMayor") String fechaMayor,
             Model model) {
 
-		List<Map<String, Object>> datosReporte = teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
-		List<Map<String, Object>> estadoResultados = teradataService.obtenerEstadoResultados(codigoEntidad, fechaMayor);
+		List<Map<String, Object>> datosReporte = consultasAlaBD.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+		List<Map<String, Object>> estadoResultados = consultasAlaBD.obtenerEstadoResultados(codigoEntidad, fechaMayor);
         model.addAttribute("datosReporte", datosReporte);
 		model.addAttribute("estadoResultados", estadoResultados);
         model.addAttribute("codigoEntidad", codigoEntidad);
         
-        String fechaMenorStr = teradataService.calcularFechaMenor(fechaMayor);  
+        String fechaMenorStr = consultasAlaBD.calcularFechaMenor(fechaMayor);  
         LocalDate fechaMenor = LocalDate.parse(fechaMenorStr); // Convertir a LocalDate
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es"));
         String fechaMenorFormateada = fechaMenor.format(formatter);
@@ -65,7 +65,7 @@ public class ControladorReportesAp {
 	 * @RequestParam(name = "fechaMayor") String fechaMayor, Model model) {
 	 * 
 	 * List<Map<String, Object>> datosReporte =
-	 * teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+	 * consultasAlaBD.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
 	 * model.addAttribute("datosReporte", datosReporte);
 	 * model.addAttribute("codigoEntidad", codigoEntidad);
 	 * model.addAttribute("fechaMayor", fechaMayor);
@@ -93,9 +93,9 @@ public class ControladorReportesAp {
             @RequestParam(name = "fechaMayor") String fechaMayor,
             Model model) {
 
-        List<Map<String, Object>> datosBalance = teradataService.obtenerBalance(codigoEntidad, fechaMayor);
+        List<Map<String, Object>> datosBalance = consultasAlaBD.obtenerBalance(codigoEntidad, fechaMayor);
 
-        String fechaMenor = teradataService.calcularFechaMenor(fechaMayor);
+        String fechaMenor = consultasAlaBD.calcularFechaMenor(fechaMayor);
 
         model.addAttribute("datosBalance", datosBalance);
         model.addAttribute("codigoEntidad", codigoEntidad);

@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,22 +48,44 @@ public class ServicioConsultasAlaBD {
 	    Logger log = LoggerFactory.getLogger(getClass());
 
 	    Map<String, GrupoEstadoResultados> gruposCuentas =
-	            cuentasDesdeArchivo.leerCodigosDesdeCSVConOrdencatYOrdengru(
+	            cuentasDesdeArchivo.armarGruposDeCuentas(
 	                    "archEstadoResultados.csv", true, ";");
 
 	    List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
 
+	    // Guardar totales
+	    double totalIngresos = 0.0;
+	    double totalGastos = 0.0;
+	    
+	    Integer ordencatActual = null;
+	    int posInicioSeccion   = 0; // para insertar total al inicio de cada sección
+	    
 	    for (Map.Entry<String, GrupoEstadoResultados> entry : gruposCuentas.entrySet()) {
-	        GrupoEstadoResultados grupoData = entry.getValue();
-	        String nombreGrupo = grupoData.getNombreGrupo();
-	        List<String> cuentas = grupoData.getCuentas();
+	        GrupoEstadoResultados g = entry.getValue();
+	        if (ordencatActual != null && g.getOrdencat() != ordencatActual) {
+	            if (ordencatActual == 1) {
+	                Map<String, Object> totalIng = new HashMap<>();
+	                totalIng.put("Grupo", "TOTAL INGRESOS");
+	                totalIng.put("total_saldo", totalIngresos);
+	                filasDeEstadoResultados.add(posInicioSeccion, totalIng);
+	            } else if (ordencatActual == 2) {
+	                Map<String, Object> totalGas = new HashMap<>();
+	                totalGas.put("Grupo", "TOTAL GASTOS");
+	                totalGas.put("total_saldo", totalGastos);
+	                filasDeEstadoResultados.add(posInicioSeccion, totalGas);
+	            }
+	            // nueva sección comienza aquí
+	            posInicioSeccion = filasDeEstadoResultados.size();
+	        }
+
+	        ordencatActual = g.getOrdencat();
 
 	        // Crear placeholders dinámicos
-	        String placeholders = cuentas.stream().map(c -> "?").collect(Collectors.joining(", "));
+	        String placeholders = g.getCuentas().stream().map(c -> "?").collect(Collectors.joining(", "));
 
 	        // Query
-	        String query = "SELECT '" + nombreGrupo + "' AS Grupo, " +
-	                "SUM(ef.Saldo_Sincierre_Total_Moneda_0) AS total_saldo " +
+	        String query = "SELECT '" + g.getNombreGrupo() + "' AS Grupo, " +
+	                "SUM(ef.Saldo_Sincierre_Total_Moneda_0)/1000000 AS total_saldo " +
 	                "FROM prod_dwh_consulta.estfin_indiv ef " +
 	                "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID " +
 	                "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID " +
@@ -77,23 +100,42 @@ public class ServicioConsultasAlaBD {
 	        List<Object> params = new ArrayList<>();
 	        params.add(fecha);
 	        params.add(codigoEntidad);
-	        params.addAll(cuentas);
-
-	        // Depuración
-//	        log.info("QUERY Estado Resultados para grupo [{}]:\n{}", nombreGrupo, query);
-//	        log.info("Parámetros: {}", params);
-
+	        params.addAll(g.getCuentas());
+	        
 	        if (log.isDebugEnabled()) {
             String sqlDebug = query;
             for (Object param : params) {
                 String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
                 sqlDebug = sqlDebug.replaceFirst("\\?", value);
             }
-            log.debug("QUERY Estado Resultados DEBUG:\n{}", sqlDebug);
+            log.debug("ER grupo='{}' cat='{}' ordencat={} ->\n{}", g.getNombreGrupo(), g.getCategoria(), g.getOrdencat(), sqlDebug);
         }
 	        
-	        List<Map<String, Object>> resultadoQuery = jdbcTemplate.queryForList(query, params.toArray());
-	        filasDeEstadoResultados.addAll(resultadoQuery);
+	        Map<String, Object> fila = jdbcTemplate.queryForMap(query, params.toArray());
+	        
+	        double saldo = fila.get("total_saldo") != null ? ((Number) fila.get("total_saldo")).doubleValue() : 0.0;
+	        
+	        if (g.getOrdencat() == 1)  {
+	            totalIngresos += saldo;
+	        } else if (g.getOrdencat() == 2) {
+	            totalGastos += saldo;
+	        } else {
+	            log.warn("Categoría desconocida en CSV: '{}'", g.getCategoria());
+	        }
+
+	        filasDeEstadoResultados.add(fila);
+	    }
+
+	    if (ordencatActual != null) {
+	        Map<String, Object> total = new HashMap<>();
+	        if (ordencatActual == 1) {
+	            total.put("Grupo", "TOTAL INGRESOS");
+	            total.put("total_saldo", totalIngresos);
+	        } else {
+	            total.put("Grupo", "TOTAL GASTOS");
+	            total.put("total_saldo", totalGastos);
+	        }
+	        filasDeEstadoResultados.add(posInicioSeccion, total);
 	    }
 
 	    return filasDeEstadoResultados;

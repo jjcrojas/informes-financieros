@@ -67,7 +67,7 @@
 				</tr>
 			</tbody>
 		</table>
-		<a class="btn btn-success" th:href="@{/api/teradata/cuif/excel(codigoEntidad=${codigoEntidad}, fechaMayor=${fechaMayor})}">Descargar Reporte en Excel</a>
+		<a class="btn btn-success" th:href="@{/api/consulta/cuif/excel(codigoEntidad=${codigoEntidad}, fechaMayor=${fechaMayor})}">Descargar Reporte en Excel</a>
 	</div>
 </div>
 
@@ -172,7 +172,7 @@ window.addEventListener("DOMContentLoaded", async function () {
 		}
 	});
 
-	const url = `/api/teradata/cuif?codigoEntidad=[[${codigoEntidad}]]&fechaMayor=[[${fechaMayor}]]`;
+	const url = `/api/consulta/cuif?codigoEntidad=[[${codigoEntidad}]]&fechaMayor=[[${fechaMayor}]]`;
 	try {
 		const response = await fetch(url);
 		const data = await response.json();

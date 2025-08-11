@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import javax.sql.DataSource;
 
 @Configuration
-public class TeradataConfig {
+public class ApConfig {
 
     @Value("${spring.datasource.url}")
     private String url;

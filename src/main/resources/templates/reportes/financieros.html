@@ -93,7 +93,7 @@
 					</td>
 				</tr>
 			</tbody>
-	
+
 
 
 		</table>
@@ -108,14 +108,15 @@
 		<table class="table table-bordered">
 			<thead>
 				<tr>
-					<th>Grupo</th>
-					<th>Saldo</th>
+					<th>Concepto</th>
+					<th th:text="${fechaFormateada}">Valor Actual</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr th:each="fila : ${estadoResultados}">
-					<td th:text="${fila['Grupo']}"></td>
-					<td class="format-number" th:text="${fila['total_saldo']}"></td>
+				<tr th:each="fila : ${estadoResultados}"
+					th:classappend="${#strings.startsWith(fila.Grupo, 'TOTAL')} ? 'total-row'">
+					<td th:text="${fila.Grupo}"></td>
+					<td th:text="${fila.total_saldo}"></td>
 				</tr>
 			</tbody>
 		</table>

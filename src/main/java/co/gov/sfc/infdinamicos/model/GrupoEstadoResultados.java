@@ -4,23 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GrupoEstadoResultados {
-    private String nombreGrupo; // Ej: "Comisiones Pensiones Obligatorias"
-    private List<String> cuentas; // Ej: ["411528", "411530", ...]
+    private final String nombreGrupo;
+    private final String categoria;
+    private final int ordencat;
+    private final int ordengru;
+    private final List<String> cuentas = new ArrayList<>();
 
-    public GrupoEstadoResultados(String nombreGrupo) {
+    public GrupoEstadoResultados(String nombreGrupo, String categoria, int ordencat, int ordengru) {
         this.nombreGrupo = nombreGrupo;
-        this.cuentas = new ArrayList<>();
+        this.categoria = categoria;
+        this.ordencat = ordencat;
+        this.ordengru = ordengru;
     }
 
-    public String getNombreGrupo() {
-        return nombreGrupo;
-    }
-
-    public List<String> getCuentas() {
-        return cuentas;
-    }
-
-    public void addCuenta(String cuenta) {
-        this.cuentas.add(cuenta);
-    }
+    public String getNombreGrupo() { return nombreGrupo; }
+    public String getCategoria()   { return categoria; }
+    public int getOrdencat()       { return ordencat; }
+    public int getOrdengru()       { return ordengru; }
+    public List<String> getCuentas() { return cuentas; }
+    public void addCuenta(String c) { cuentas.add(c); }
 }

@@ -21,18 +21,18 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/teradata") // Asegura que este path es correcto
+@RequestMapping("/api/consulta") // Asegura que este path es correcto
 public class ControladorFuncionalidadesAp {
 
-	private final ServicioConsultasAlaBD teradataService;
+	private final ServicioConsultasAlaBD servicioDeConsultas;
 
-	public ControladorFuncionalidadesAp(ServicioConsultasAlaBD teradataService) {
-		this.teradataService = teradataService;
+	public ControladorFuncionalidadesAp(ServicioConsultasAlaBD servicioDeConsultas) {
+		this.servicioDeConsultas = servicioDeConsultas;
 	}
 
 	@GetMapping("/test") // Ruta correcta para la prueba
 	public List<Map<String, Object>> testConnection() {
-		return teradataService.obtenerDatosPrueba();
+		return servicioDeConsultas.obtenerDatosPrueba();
 	}
 
 	@GetMapping("/balance-estado-resultados")
@@ -40,8 +40,8 @@ public class ControladorFuncionalidadesAp {
 			@RequestParam(name = "codigoEntidad") int codigoEntidad, 
 	        @RequestParam(name = "fechaMayor") String fechaMayor) {
 
-	    List<Map<String, Object>> datosReporte = teradataService.obtenerReporteFinanciero(codigoEntidad,fechaMayor);
-	    List<Map<String, Object>> estadoResultados = teradataService.obtenerEstadoResultados(codigoEntidad,fechaMayor);
+	    List<Map<String, Object>> datosReporte = servicioDeConsultas.obtenerReporteFinanciero(codigoEntidad,fechaMayor);
+	    List<Map<String, Object>> estadoResultados = servicioDeConsultas.obtenerEstadoResultados(codigoEntidad,fechaMayor);
 
 	    Map<String, Object> response = new HashMap<>();
 	    response.put("balance", datosReporte);
@@ -51,22 +51,16 @@ public class ControladorFuncionalidadesAp {
 	}
 
 	
-	@GetMapping("/api/teradata/reporte")
-	public List<Map<String, Object>> obtenerReporte(@RequestParam(name = "codigoEntidad") int codigoEntidad,
-			@RequestParam(name = "fechaMayor") String fechaMayor) {
-		return teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
-	}
-
 	@GetMapping("/cuif")
 	public List<Map<String, Object>> obtenerBalance(@RequestParam(name = "codigoEntidad") int codigoEntidad,
 			@RequestParam(name = "fechaMayor") String fechaMayor) {
-		return teradataService.obtenerBalance(codigoEntidad, fechaMayor);
+		return servicioDeConsultas.obtenerBalance(codigoEntidad, fechaMayor);
 	}
 	
 	@GetMapping("/balance/informe_fin")
 	public List<Map<String, Object>> obtenerReporteFinanciero(@RequestParam(name = "codigoEntidad") int codigoEntidad,
 			@RequestParam(name = "fechaMayor") String fechaMayor) {
-		return teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+		return servicioDeConsultas.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
 	}
 	
 	@GetMapping("/reporte/excel")
@@ -74,7 +68,7 @@ public class ControladorFuncionalidadesAp {
             @RequestParam(name = "codigoEntidad") int codigoEntidad,
             @RequestParam(name = "fechaMayor") String fechaMayor) {
 
-        List<Map<String, Object>> datosReporte = teradataService.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
+        List<Map<String, Object>> datosReporte = servicioDeConsultas.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
 
         try (Workbook workbook = new XSSFWorkbook()) {
             Sheet sheet = workbook.createSheet("Reporte Financiero");
@@ -134,7 +128,7 @@ public class ControladorFuncionalidadesAp {
 			@RequestParam(name = "fechaMayor") String fechaMayor) {
 
 		try {
-			byte[] excelBytes = teradataService.generarReporteExcel(codigoEntidad, fechaMayor);
+			byte[] excelBytes = servicioDeConsultas.generarReporteExcel(codigoEntidad, fechaMayor);
 
 			return ResponseEntity.ok()
 					.header(HttpHeaders.CONTENT_DISPOSITION,

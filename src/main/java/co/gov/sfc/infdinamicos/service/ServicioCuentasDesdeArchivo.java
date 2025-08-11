@@ -1,6 +1,5 @@
 package co.gov.sfc.infdinamicos.service;
 
-import co.gov.sfc.infdinamicos.model.CuentaEstadoResultados;
 import co.gov.sfc.infdinamicos.model.GrupoEstadoResultados;
 
 import org.springframework.stereotype.Service;
@@ -11,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ServicioCuentasDesdeArchivo {
@@ -24,33 +22,34 @@ public class ServicioCuentasDesdeArchivo {
 	 * Sirve tanto para Estado de Resultados como para Balance, etc.
 	 */
 	
-	public Map<String, GrupoEstadoResultados> leerCodigosDesdeCSVConOrdencatYOrdengru(
+	public Map<String, GrupoEstadoResultados> armarGruposDeCuentas(
 	        String nombreArchivo, boolean tieneEncabezado, String separador) {
 
 	    Map<String, GrupoEstadoResultados> mapa = new TreeMap<>((a, b) -> {
-	        // Ordena por ordencat y luego ordengru numéricamente
 	        String[] pa = a.split("-");
 	        String[] pb = b.split("-");
-	        int compCat = Integer.compare(Integer.parseInt(pa[0]), Integer.parseInt(pb[0]));
-	        if (compCat != 0) return compCat;
+	        int ca = Integer.parseInt(pa[0]);
+	        int cb = Integer.parseInt(pb[0]);
+	        if (ca != cb) return Integer.compare(ca, cb);
 	        return Integer.compare(Integer.parseInt(pa[1]), Integer.parseInt(pb[1]));
 	    });
 
 	    try (BufferedReader br = new BufferedReader(new FileReader("src/main/resources/" + nombreArchivo))) {
 	        String linea;
-	        if (tieneEncabezado) br.readLine(); // saltar encabezado
+	        if (tieneEncabezado) br.readLine();
 
 	        while ((linea = br.readLine()) != null) {
-	            String[] cols = linea.split(separador);
+	            String[] cols = linea.split(separador, -1);
 
-	            String ordencat = cols[0].trim();
-	            String ordengru = cols[2].trim();
-	            String nombreGrupo = cols[3].trim(); // Columna grupo
-	            String cuenta = cols[5].trim();
+	            int ordencat           = Integer.parseInt(cols[0].trim());
+	            String nombreCategoria = cols[1].trim().toLowerCase(); // <-- normalizamos
+	            int ordengru           = Integer.parseInt(cols[2].trim());
+	            String nombreGrupo     = cols[3].trim();
+	            String cuenta          = cols[5].trim();
 
 	            String clave = ordencat + "-" + ordengru;
-
-	            mapa.putIfAbsent(clave, new GrupoEstadoResultados(nombreGrupo));
+	            mapa.putIfAbsent(clave, new GrupoEstadoResultados(
+	                    nombreGrupo, nombreCategoria, ordencat, ordengru));
 	            mapa.get(clave).addCuenta(cuenta);
 	        }
 	    } catch (IOException e) {
@@ -143,14 +142,14 @@ public class ServicioCuentasDesdeArchivo {
 	        while ((linea = br.readLine()) != null) {
 	            String[] partes = linea.split(separador);
 
-	            if (tipo == CuentaEstadoResultados.class) {
-	                CuentaEstadoResultados cuenta = new CuentaEstadoResultados(
-	                        Integer.parseInt(partes[0]), partes[1],
-	                        Integer.parseInt(partes[2]), partes[3],
-	                        partes[4], partes[5], partes[6]);
-	                resultado.add(tipo.cast(cuenta));
-
-	            } else if (tipo == String.class) {
+//	            if (tipo == CuentaEstadoResultados.class) {
+//	                CuentaEstadoResultados cuenta = new CuentaEstadoResultados(
+//	                        Integer.parseInt(partes[0]), partes[1],
+//	                        Integer.parseInt(partes[2]), partes[3],
+//	                        partes[4], partes[5], partes[6]);
+//	                resultado.add(tipo.cast(cuenta));
+//
+//	            } else if (tipo == String.class) {
 	                // Asumimos estructura clase;grupo;cuenta;subcuenta
 	                if (partes.length >= 4) {
 	                    String clase = String.format("%1s", partes[0]);
@@ -160,7 +159,7 @@ public class ServicioCuentasDesdeArchivo {
 
 	                    String codigoPUC = clase + grupo + cuenta + subcuenta;
 	                    resultado.add(tipo.cast(String.valueOf(Integer.parseInt(codigoPUC))));
-	                }
+//	                }
 	            }
 	        }
 
@@ -173,28 +172,28 @@ public class ServicioCuentasDesdeArchivo {
 
 	
 
-    public List<CuentaEstadoResultados> obtenerCuentasEstadoResultados() {
-        List<CuentaEstadoResultados> cuentas = new ArrayList<>();
-        System.out.println("Cargando archivo: " + getClass().getClassLoader().getResource("archEstadoResultados.csv"));
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(
-                getClass().getClassLoader().getResourceAsStream("archEstadoResultados.csv")))) {
-            
-            cuentas = br.lines()
-                    .skip(1) // Omitir la cabecera
-                    .map(line -> {
-                        String[] partes = line.split(",");
-                        return new CuentaEstadoResultados(
-                                Integer.parseInt(partes[0]), partes[1], 
-                                Integer.parseInt(partes[2]), partes[3], 
-                                partes[4], partes[5], partes[6]);
-                    })
-                    .collect(Collectors.toList());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return cuentas;
-    }
+//    public List<CuentaEstadoResultados> obtenerCuentasEstadoResultados() {
+//        List<CuentaEstadoResultados> cuentas = new ArrayList<>();
+//        System.out.println("Cargando archivo: " + getClass().getClassLoader().getResource("archEstadoResultados.csv"));
+//        try (BufferedReader br = new BufferedReader(new InputStreamReader(
+//                getClass().getClassLoader().getResourceAsStream("archEstadoResultados.csv")))) {
+//            
+//            cuentas = br.lines()
+//                    .skip(1) // Omitir la cabecera
+//                    .map(line -> {
+//                        String[] partes = line.split(",");
+//                        return new CuentaEstadoResultados(
+//                                Integer.parseInt(partes[0]), partes[1], 
+//                                Integer.parseInt(partes[2]), partes[3], 
+//                                partes[4], partes[5], partes[6]);
+//                    })
+//                    .collect(Collectors.toList());
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return cuentas;
+//    }
     
     public List<String> construirFiltroCodigosPUCDesdeCSV(String rutaCsv) {
         List<String> codigosPUC = new ArrayList<>();
