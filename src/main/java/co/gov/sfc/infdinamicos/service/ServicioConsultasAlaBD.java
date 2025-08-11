@@ -17,6 +17,7 @@ import co.gov.sfc.infdinamicos.model.GrupoEstadoResultados;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -42,7 +43,7 @@ public class ServicioConsultasAlaBD {
 		String sql = "SELECT TOP 10 * FROM PROD_DWH_CONSULTA.ENTIDADES";
 		return jdbcTemplate.queryForList(sql);
 	}
-	
+
 	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
 
 	    Logger log = LoggerFactory.getLogger(getClass());
@@ -67,11 +68,13 @@ public class ServicioConsultasAlaBD {
 	                Map<String, Object> totalIng = new HashMap<>();
 	                totalIng.put("Grupo", "TOTAL INGRESOS");
 	                totalIng.put("total_saldo", totalIngresos);
+	                totalIng.put("esTotal", true);
 	                filasDeEstadoResultados.add(posInicioSeccion, totalIng);
 	            } else if (ordencatActual == 2) {
 	                Map<String, Object> totalGas = new HashMap<>();
 	                totalGas.put("Grupo", "TOTAL GASTOS");
 	                totalGas.put("total_saldo", totalGastos);
+	                totalGas.put("esTotal", true);
 	                filasDeEstadoResultados.add(posInicioSeccion, totalGas);
 	            }
 	            // nueva sección comienza aquí
@@ -126,99 +129,21 @@ public class ServicioConsultasAlaBD {
 	        filasDeEstadoResultados.add(fila);
 	    }
 
-	    if (ordencatActual != null) {
-	        Map<String, Object> total = new HashMap<>();
-	        if (ordencatActual == 1) {
-	            total.put("Grupo", "TOTAL INGRESOS");
-	            total.put("total_saldo", totalIngresos);
-	        } else {
-	            total.put("Grupo", "TOTAL GASTOS");
-	            total.put("total_saldo", totalGastos);
-	        }
-	        filasDeEstadoResultados.add(posInicioSeccion, total);
-	    }
 
 	    return filasDeEstadoResultados;
 	}
 
 
-//	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
-//		
-//
-//		Logger log = LoggerFactory.getLogger(getClass());
-//		
-//		Map<GrupoClave, List<String>> gruposCuentas =
-//			    cuentasDesdeArchivo.leerCodigosDesdeCSVConOrdenYNombre(
-//			        "archEstadoResultados.csv", true, ";"
-//			    );
-//	    
-//		// Ordenar por categoría y grupo
-//		List<Map.Entry<GrupoClave, List<String>>> listaOrdenada = gruposCuentas.entrySet()
-//		    .stream()
-//		    .sorted(Comparator
-//		        .comparing((Map.Entry<GrupoClave, List<String>> e) -> e.getKey().ordencat)
-//		        .thenComparing(e -> e.getKey().ordengru))
-//		    .toList();
-//
-//		List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
-//
-//		for (Map.Entry<GrupoClave, List<String>> grupo : listaOrdenada) {
-//			// Crear placeholders dinámicos: ?, ?, ?, ...
-//			String placeholders = grupo.getValue().stream().map(c -> "?").collect(Collectors.joining(", "));
-//
-//			// Query con placeholders
-//	        String query = "SELECT '" + grupo.getKey() + "' AS Grupo, " +
-//	                "SUM(ef.Saldo_Sincierre_Total_Moneda_0) AS total_saldo " +
-//	                "FROM prod_dwh_consulta.estfin_indiv ef " +
-//	                "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID " +
-//	                "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID " +
-//	                "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " +
-//	                "WHERE T.Fecha = ? " +
-//	                "AND E.Tipo_Entidad = 23 " +
-//	                "AND E.Codigo_Entidad = ? " +
-//	                "AND ef.Tipo_Informe = 0 " +
-//	                "AND P.codigo IN (" + placeholders + ")";
-//	        
-//	        // Armar parámetros en el mismo orden que los placeholders
-//	        List<Object> params = new ArrayList<>();
-//	        params.add(fecha);           
-//	        params.add(codigoEntidad);   
-//	        params.addAll(grupo.getValue()); 	   
-//	        
-////	        System.out.println("QUERY Estado Resultados:\n" + query);
-//	        // 💡 Construir SQL de depuración sustituyendo cada "?"
-//	        if (log.isDebugEnabled()) {
-//	            String sqlDebug = query;
-//	            for (Object param : params) {
-//	                String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
-//	                sqlDebug = sqlDebug.replaceFirst("\\?", value);
-//	            }
-//	            log.debug("QUERY Estado Resultados DEBUG:\n{}", sqlDebug);
-//	        }
-//
-//	        List<Map<String, Object>> resultadoQuery = jdbcTemplate.queryForList(query, params.toArray());
-//			filasDeEstadoResultados.addAll(resultadoQuery);
-//		}
-//
-//		return filasDeEstadoResultados;
-//	}
-
 	public List<Map<String, Object>> obtenerReporteFinanciero(int codigoEntidad, String fechaMayor) {
 		String fechaMenor = calcularFechaMenor(fechaMayor);
 
-//		// Leer lista de códigos desde el CSV
-//		List<String> codigosPUC = cuentasDesdeArchivo
-//				.construirFiltroCodigosPUCDesdeCSV("src/main/resources/archCuentasBalance.csv");
-		
-		List<String> codigosPUC = cuentasDesdeArchivo
-			    .leerCuentasDesdeCSV("archCuentasBalance.csv", true, ";", String.class);
+		List<String> codigosPUC = cuentasDesdeArchivo.leerCuentasDesdeCSV("archCuentasBalance.csv", true, ";",
+				String.class);
 
-
-		
 		// Validar lista no vacía
-	    if (codigosPUC.isEmpty()) {
-	        throw new RuntimeException("La lista de códigos PUC está vacía.");
-	    }
+		if (codigosPUC.isEmpty()) {
+			throw new RuntimeException("La lista de códigos PUC está vacía.");
+		}
 		// Crear placeholders dinámicos: ?, ?, ?, ...
 		String placeholders = codigosPUC.stream().map(c -> "?").collect(Collectors.joining(", "));
 
@@ -294,25 +219,25 @@ public class ServicioConsultasAlaBD {
 						""";
 
 		// Armar parámetros de forma ordenada
-	    List<Object> parametros = new ArrayList<>();
-	    parametros.add(codigoEntidad);
-	    parametros.add(fechaMayor);
-	    parametros.add(fechaMenor);
-	    parametros.add(codigoEntidad);
-	    parametros.add(fechaMayor);
-	    parametros.add(fechaMayor);
-	    parametros.add(fechaMayor);
-	    parametros.add(fechaMayor);
-	    parametros.add(codigoEntidad);
-	    parametros.add(fechaMayor);
-	    parametros.add(fechaMenor);
+		List<Object> parametros = new ArrayList<>();
+		parametros.add(codigoEntidad);
+		parametros.add(fechaMayor);
+		parametros.add(fechaMenor);
+		parametros.add(codigoEntidad);
+		parametros.add(fechaMayor);
+		parametros.add(fechaMayor);
+		parametros.add(fechaMayor);
+		parametros.add(fechaMayor);
+		parametros.add(codigoEntidad);
+		parametros.add(fechaMayor);
+		parametros.add(fechaMenor);
 
-	    // Agregar códigos del IN
-	    parametros.addAll(codigosPUC);
-	    
+		// Agregar códigos del IN
+		parametros.addAll(codigosPUC);
+
 		System.out.println("QUERY:\n" + sql);
 
-	    return jdbcTemplate.queryForList(sql, parametros.toArray());
+		return jdbcTemplate.queryForList(sql, parametros.toArray());
 	}
 
 	public List<Map<String, Object>> obtenerBalance(int codigoEntidad, String fechaMayor) {
@@ -391,10 +316,6 @@ public class ServicioConsultasAlaBD {
 				    ORDER BY puc.Clase, puc.Grupo, puc.Cuenta, puc.Subcuenta
 				""";
 
-//        System.out.println("SQL: " + sql);
-//        System.out.println("Parámetros : " + " " + codigoEntidad + " " + fechaMayor + " " + 
-//        		fechaMenor + " " + codigoEntidad + " " + fechaMayor + " " + fechaMayor + " " + 
-//        		codigoEntidad + " " + fechaMayor + " " + fechaMenor);     
 
 		return jdbcTemplate.queryForList(sql, codigoEntidad, fechaMayor, fechaMenor, codigoEntidad, fechaMayor,
 				fechaMayor, codigoEntidad, fechaMayor, fechaMenor);
@@ -415,13 +336,6 @@ public class ServicioConsultasAlaBD {
 
 		return fechaMenorAjustada.format(formatter);
 	}
-
-//    import org.apache.poi.ss.usermodel.*;
-//    import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-//    import java.io.ByteArrayOutputStream;
-//    import java.io.IOException;
-//    import java.util.List;
-//    import java.util.Map;
 
 	public byte[] generarReporteExcel(int codigoEntidad, String fechaMayor) throws IOException {
 		List<Map<String, Object>> datosBalance = obtenerBalance(codigoEntidad, fechaMayor);

@@ -114,9 +114,9 @@
 			</thead>
 			<tbody>
 				<tr th:each="fila : ${estadoResultados}"
-					th:classappend="${#strings.startsWith(fila.Grupo, 'TOTAL')} ? 'total-row'">
-					<td th:text="${fila.Grupo}"></td>
-					<td th:text="${fila.total_saldo}"></td>
+					th:classappend="${fila['esTotal'] == true} ? ' total-row'">
+					<td th:text="${fila['Grupo']}"></td>
+					<td class="format-number" th:text="${fila['total_saldo']}"></td>
 				</tr>
 			</tbody>
 		</table>
