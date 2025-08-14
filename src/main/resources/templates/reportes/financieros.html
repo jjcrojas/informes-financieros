@@ -14,18 +14,6 @@
 	href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
 </head>
-<script>
-	document.addEventListener("DOMContentLoaded", function() {
-		document.querySelectorAll(".format-number").forEach(function(element) {
-			let num = parseFloat(element.innerText.replace(",", ""));
-			if (!isNaN(num)) {
-				element.innerText = num.toLocaleString("en-US", {
-					minimumFractionDigits : 2
-				});
-			}
-		});
-	});
-</script>
 
 <body class="container mt-4">
 
@@ -70,33 +58,37 @@
 					<th th:text="${fechaFormateada}">Valor Actual</th>
 					<th th:text="${fechaMenorFormateada}">Valor Anterior</th>
 					<th>% Participación</th>
-					<th>Variación Anual</th>
+					<th>% Variación Trimestral</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr th:each="fila : ${datosReporte}"
 					th:class="${#strings.endsWith(fila.Codigo, '00000')} ? 'fila-clase' : ''">
 					<td th:text="${fila['Nombre_Cuenta']}"></td>
-					<td th:text="${fila['Codigo']}"></td>
+					<td
+						th:text="${fila['Codigo'] != null and fila['Codigo'] != '' ? fila['Codigo'] : '-'}"></td>
 
-					<td class="format-number"
-						th:text="${fila['Valor_Actual_Millones'] != null ? fila['Valor_Actual_Millones'] : '-'}">
-					</td>
-					<td class="format-number"
-						th:text="${fila['Valor_Anterior_Millones'] != null ? fila['Valor_Anterior_Millones'] : '-'}">
-					</td>
-					<td class="format-number"
-						th:text="${fila['Porcentaje_Participacion_Actual'] != null ? fila['Porcentaje_Participacion_Actual'] : '-'}">
-					</td>
-					<td class="format-number"
-						th:text="${fila['Variacion_Anual'] != null ? fila['Variacion_Anual'] : '-'}">
-					</td>
+					<td
+						th:text="${fila['Valor_Actual_Millones'] != null ? fila['Valor_Actual_Millones'] : '-'}"></td>
+					<td
+						th:text="${fila['Valor_Anterior_Millones'] != null ? fila['Valor_Anterior_Millones'] : '-'}"></td>
+
+
+					<td
+						th:text="${fila['Porcentaje_Participacion_Actual'] != null 
+  ? #numbers.formatDecimal(fila['Porcentaje_Participacion_Actual'], 1, 'COMMA', 2, 'POINT') 
+  : '-'}"></td>
+
+					<td
+						th:text="${fila['Variacion_Anual'] != null 
+  ? #numbers.formatDecimal(fila['Variacion_Anual'], 1, 'COMMA', 2, 'POINT') 
+  : '-'}"></td>
+
 				</tr>
 			</tbody>
 
-
-
 		</table>
+				<p class="texto-nota">Incluye resultados de ejercicios anteriores</p>
 
 		<!-- Botón para descargar el reporte en Excel -->
 		<a class="btn btn-success"
@@ -116,7 +108,10 @@
 				<tr th:each="fila : ${estadoResultados}"
 					th:classappend="${fila['esTotal'] == true} ? ' total-row'">
 					<td th:text="${fila['Grupo']}"></td>
-					<td class="format-number" th:text="${fila['total_saldo']}"></td>
+					<td
+						th:text="${fila['total_saldo'] != null 
+  ? #numbers.formatDecimal(fila['total_saldo'], 1, 'COMMA', 2, 'POINT') 
+  : '-'}"></td>
 				</tr>
 			</tbody>
 		</table>

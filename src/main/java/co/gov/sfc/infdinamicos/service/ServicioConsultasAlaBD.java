@@ -14,17 +14,23 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import co.gov.sfc.infdinamicos.model.GrupoEstadoResultados;
+import co.gov.sfc.infdinamicos.model.LineaBalance;
+import co.gov.sfc.infdinamicos.model.CuentaBalance;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,200 +50,354 @@ public class ServicioConsultasAlaBD {
 		return jdbcTemplate.queryForList(sql);
 	}
 
+//	public List<Map<String, Object>> obtenerReporteBalanceDinamico(int codigoEntidad, String fechaMayor) {
+//	    Logger log = LoggerFactory.getLogger(getClass());
+//
+//	    String fechaMenor = calcularFechaMenor(fechaMayor);
+//
+//	    // 1) CSV -> líneas (cada línea tiene cuentas con signos)
+//	    List<LineaBalance> lineas = cuentasDesdeArchivo.leerLineasBalanceDesdeCSV("archCuentasBalance.csv", true, ";");
+//
+//	    // 2) Set de códigos únicos
+//	    Set<String> codigosUnicos = lineas.stream()
+//	        .flatMap(l -> l.getCuentas().stream().map(CuentaBalance::getCodigo))
+//	        .collect(Collectors.toCollection(LinkedHashSet::new));
+//
+//	    if (codigosUnicos.isEmpty()) throw new RuntimeException("No hay códigos en el CSV.");
+//
+//	    // 3) Query base por código (una sola vez)
+//	    String placeholders = codigosUnicos.stream().map(c -> "?").collect(Collectors.joining(","));
+//	    String sql = """
+//	        SELECT P.Codigo,
+//	               ROUND(MAX(CASE WHEN T.Fecha = ? THEN EF.Saldo_Sincierre_Total_Moneda_0 END)/1000000, 2) AS valor_actual,
+//	               ROUND(MAX(CASE WHEN T.Fecha = ? THEN EF.Saldo_Sincierre_Total_Moneda_0 END)/1000000, 2) AS valor_anterior
+//	        FROM PROD_DWH_CONSULTA.ESTFIN_INDIV EF
+//	        JOIN PROD_DWH_CONSULTA.TIEMPO T ON T.Tie_ID = EF.Tie_ID
+//	        JOIN PROD_DWH_CONSULTA.ENTIDADES E ON E.Ent_ID = EF.Ent_ID
+//	        JOIN PROD_DWH_CONSULTA.PUC P ON P.Puc_ID = EF.Puc_ID
+//	        WHERE E.Tipo_Entidad = 23
+//	          AND E.Codigo_Entidad = ?
+//	          AND T.Fecha IN (?, ?)
+//	          AND EF.Tipo_Informe = 0
+//	          AND P.Codigo IN (""" + placeholders + ") " + """
+//	        GROUP BY P.Codigo
+//	    """;
+//
+//	    List<Object> params = new ArrayList<>();
+//	    params.add(fechaMayor);   // CASE actual
+//	    params.add(fechaMenor);   // CASE anterior
+//	    params.add(codigoEntidad);
+//	    params.add(fechaMayor);
+//	    params.add(fechaMenor);
+//	    params.addAll(codigosUnicos);
+//
+//	    if (log.isDebugEnabled()) {
+//	        log.debug("BALANCE SQL BASE:\n{}", buildDebugSql(sql, params));
+//	    }
+//
+//	    List<Map<String, Object>> filasCodigos = jdbcTemplate.queryForList(sql, params.toArray());
+//
+//	    // 4) Índice por código
+//	    Map<String, Map<String, Object>> porCodigo = new HashMap<>();
+//	    for (Map<String, Object> r : filasCodigos) {
+//	        porCodigo.put(String.valueOf(r.get("Codigo")), r);
+//	    }
+//
+//	    // 5) (Opcional) traer activo total para porcentaje
+//	    Double activoTotal = obtenerActivoTotal(codigoEntidad, fechaMayor); // tu CTE/consulta actual
+//
+//	    // 6) Armar líneas aplicando signos
+//	    List<Map<String, Object>> resultado = new ArrayList<>();
+//
+//	    for (LineaBalance l : lineas) {
+//	        double actual = 0.0;
+//	        double anterior = 0.0;
+//
+//	        for (TerminoBalance t : l.getTerminos()) {
+//	            Map<String, Object> row = porCodigo.get(t.getCodigo());
+//	            if (row != null) {
+//	                Double va = row.get("valor_actual")   != null ? ((Number) row.get("valor_actual")).doubleValue()   : 0.0;
+//	                Double vp = row.get("valor_anterior") != null ? ((Number) row.get("valor_anterior")).doubleValue() : 0.0;
+//	                actual   += t.getSigno() * va;
+//	                anterior += t.getSigno() * vp;
+//	            }
+//	        }
+//
+//	        Double porcentaje = null;
+//	        if (activoTotal != null && activoTotal != 0) {
+//	            porcentaje = (actual / activoTotal) * 100.0;
+//	        }
+//
+//	        Double variacion = null;
+//	        if (anterior != 0) {
+//	            variacion = ((actual - anterior) / anterior) * 100.0;
+//	        }
+//
+//	        Map<String, Object> fila = new LinkedHashMap<>();
+//	        fila.put("Nombre_Cuenta", l.getLinea());
+//	        fila.put("Codigo", ""); //Se puede dejar vacío o el primer código
+//	        fila.put("Valor_Actual_Millones", actual);
+//	        fila.put("Valor_Anterior_Millones", anterior);
+//	        fila.put("Porcentaje_Participacion_Actual", porcentaje);
+//	        fila.put("Variacion_Anual", variacion);
+//
+//	        resultado.add(fila);
+//	    }
+//
+//	    // 7) Ordenar por 'orden' (ya vienen ordenadas; si quieres explícito:)
+//	    // resultado ya sigue el orden de 'lineas'
+//
+//	    return resultado;
+//	}
+
+	
+	
 	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
 
-	    Logger log = LoggerFactory.getLogger(getClass());
+		Logger log = LoggerFactory.getLogger(getClass());
 
-	    Map<String, GrupoEstadoResultados> gruposCuentas =
-	            cuentasDesdeArchivo.armarGruposDeCuentas(
-	                    "archEstadoResultados.csv", true, ";");
+		Map<String, GrupoEstadoResultados> gruposCuentas = cuentasDesdeArchivo
+				.armarGruposDeCuentas("archEstadoResultados.csv", true, ";");
 
-	    List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
+		List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
 
-	    // Guardar totales
-	    double totalIngresos = 0.0;
-	    double totalGastos = 0.0;
-	    
-	    Integer ordencatActual = null;
-	    int posInicioSeccion   = 0; // para insertar total al inicio de cada sección
-	    
-	    for (Map.Entry<String, GrupoEstadoResultados> entry : gruposCuentas.entrySet()) {
-	        GrupoEstadoResultados g = entry.getValue();
-	        if (ordencatActual != null && g.getOrdencat() != ordencatActual) {
-	            if (ordencatActual == 1) {
-	                Map<String, Object> totalIng = new HashMap<>();
-	                totalIng.put("Grupo", "TOTAL INGRESOS");
-	                totalIng.put("total_saldo", totalIngresos);
-	                totalIng.put("esTotal", true);
-	                filasDeEstadoResultados.add(posInicioSeccion, totalIng);
-	            } else if (ordencatActual == 2) {
-	                Map<String, Object> totalGas = new HashMap<>();
-	                totalGas.put("Grupo", "TOTAL GASTOS");
-	                totalGas.put("total_saldo", totalGastos);
-	                totalGas.put("esTotal", true);
-	                filasDeEstadoResultados.add(posInicioSeccion, totalGas);
-	            }
-	            // nueva sección comienza aquí
-	            posInicioSeccion = filasDeEstadoResultados.size();
-	        }
+		// Guardar totales
+		double totalIngresos = 0.0;
+		double totalGastos = 0.0;
 
-	        ordencatActual = g.getOrdencat();
+		Integer ordencatActual = null;
+		int posInicioSeccion = 0; // para insertar total al inicio de cada sección
 
-	        // Crear placeholders dinámicos
-	        String placeholders = g.getCuentas().stream().map(c -> "?").collect(Collectors.joining(", "));
+		for (Map.Entry<String, GrupoEstadoResultados> entry : gruposCuentas.entrySet()) {
+			GrupoEstadoResultados g = entry.getValue();
+			if (ordencatActual != null && g.getOrdencat() != ordencatActual) {
+				if (ordencatActual == 1) {
+					Map<String, Object> totalIng = new HashMap<>();
+					totalIng.put("Grupo", "TOTAL INGRESOS");
+					totalIng.put("total_saldo", totalIngresos);
+					totalIng.put("esTotal", true);
+					filasDeEstadoResultados.add(posInicioSeccion, totalIng);
+				} else if (ordencatActual == 2) {
+					Map<String, Object> totalGas = new HashMap<>();
+					totalGas.put("Grupo", "TOTAL GASTOS");
+					totalGas.put("total_saldo", totalGastos);
+					totalGas.put("esTotal", true);
+					filasDeEstadoResultados.add(posInicioSeccion, totalGas);
+				}
+				// nueva sección comienza aquí
+				posInicioSeccion = filasDeEstadoResultados.size();
+			}
 
-	        // Query
-	        String query = "SELECT '" + g.getNombreGrupo() + "' AS Grupo, " +
-	                "SUM(ef.Saldo_Sincierre_Total_Moneda_0)/1000000 AS total_saldo " +
-	                "FROM prod_dwh_consulta.estfin_indiv ef " +
-	                "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID " +
-	                "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID " +
-	                "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " +
-	                "WHERE T.Fecha = ? " +
-	                "AND E.Tipo_Entidad = 23 " +
-	                "AND E.Codigo_Entidad = ? " +
-	                "AND ef.Tipo_Informe = 0 " +
-	                "AND P.codigo IN (" + placeholders + ")";
+			ordencatActual = g.getOrdencat();
 
-	        // Parámetros
-	        List<Object> params = new ArrayList<>();
-	        params.add(fecha);
-	        params.add(codigoEntidad);
-	        params.addAll(g.getCuentas());
-	        
-	        if (log.isDebugEnabled()) {
-            String sqlDebug = query;
-            for (Object param : params) {
-                String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
-                sqlDebug = sqlDebug.replaceFirst("\\?", value);
-            }
-            log.debug("ER grupo='{}' cat='{}' ordencat={} ->\n{}", g.getNombreGrupo(), g.getCategoria(), g.getOrdencat(), sqlDebug);
-        }
-	        
-	        Map<String, Object> fila = jdbcTemplate.queryForMap(query, params.toArray());
-	        
-	        double saldo = fila.get("total_saldo") != null ? ((Number) fila.get("total_saldo")).doubleValue() : 0.0;
-	        
-	        if (g.getOrdencat() == 1)  {
-	            totalIngresos += saldo;
-	        } else if (g.getOrdencat() == 2) {
-	            totalGastos += saldo;
-	        } else {
-	            log.warn("Categoría desconocida en CSV: '{}'", g.getCategoria());
-	        }
+			// Crear placeholders dinámicos
+			String placeholders = g.getCuentas().stream().map(c -> "?").collect(Collectors.joining(", "));
 
-	        filasDeEstadoResultados.add(fila);
-	    }
+			// Query
+			String query = "SELECT '" + g.getNombreGrupo() + "' AS Grupo, "
+					+ "ROUND(SUM(ef.Saldo_Sincierre_Total_Moneda_0)/1000000,2) AS total_saldo "
+					+ "FROM prod_dwh_consulta.estfin_indiv ef "
+					+ "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID "
+					+ "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID "
+					+ "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " + "WHERE T.Fecha = ? "
+					+ "AND E.Tipo_Entidad = 23 " + "AND E.Codigo_Entidad = ? " + "AND ef.Tipo_Informe = 0 "
+					+ "AND P.codigo IN (" + placeholders + ")";
 
+			// Parámetros
+			List<Object> params = new ArrayList<>();
+			params.add(fecha);
+			params.add(codigoEntidad);
+			params.addAll(g.getCuentas());
 
-	    return filasDeEstadoResultados;
+			if (log.isDebugEnabled()) {
+				String sqlDebug = query;
+				for (Object param : params) {
+					String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
+					sqlDebug = sqlDebug.replaceFirst("\\?", value);
+				}
+				log.debug("ER grupo='{}' cat='{}' ordencat={} ->\n{}", g.getNombreGrupo(), g.getCategoria(),
+						g.getOrdencat(), sqlDebug);
+			}
+
+			Map<String, Object> fila = jdbcTemplate.queryForMap(query, params.toArray());
+
+			double saldo = fila.get("total_saldo") != null ? ((Number) fila.get("total_saldo")).doubleValue() : 0.0;
+
+			if (g.getOrdencat() == 1) {
+				totalIngresos += saldo;
+			} else if (g.getOrdencat() == 2) {
+				totalGastos += saldo;
+			} else {
+				log.warn("Categoría desconocida en CSV: '{}'", g.getCategoria());
+			}
+
+			filasDeEstadoResultados.add(fila);
+		}
+
+		return filasDeEstadoResultados;
 	}
 
-
 	public List<Map<String, Object>> obtenerReporteFinanciero(int codigoEntidad, String fechaMayor) {
+		
+//		Logger log = LoggerFactory.getLogger(getClass());
+		
 		String fechaMenor = calcularFechaMenor(fechaMayor);
+		
+		List<LineaBalance> lineas = cuentasDesdeArchivo
+                .leerLineasBalanceDesdeCSV("archCuentasBalance.csv", true, ";");
+		
+		Set<String> codigosUnicos = lineas.stream()
+                .flatMap(l -> l.getCuentas().stream().map(CuentaBalance::getCodigo))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
-		List<String> codigosPUC = cuentasDesdeArchivo.leerCuentasDesdeCSV("archCuentasBalance.csv", true, ";",
-				String.class);
+        // Trae valores por código en una sola query (para ambas fechas)
+        Map<String, Map<String,Object>> porCodigo =
+                consultarValoresPorCodigo(codigoEntidad, fechaMayor, fechaMenor, codigosUnicos);
 
-		// Validar lista no vacía
-		if (codigosPUC.isEmpty()) {
-			throw new RuntimeException("La lista de códigos PUC está vacía.");
-		}
-		// Crear placeholders dinámicos: ?, ?, ?, ...
-		String placeholders = codigosPUC.stream().map(c -> "?").collect(Collectors.joining(", "));
+        // Denominador para % participación 
+        Double activoTotal = obtenerActivoTotal(codigoEntidad, fechaMayor);
+        
+        List<Map<String,Object>> out = new ArrayList<>();
+        //lineas son las filas del archivo
+        for (LineaBalance l : lineas) {
+            double actual = 0.0, anterior = 0.0;
 
-		// Construir SQL con los códigos insertados en el IN (...)
-		String sql = """
-				WITH ActivoValores AS (
-				    SELECT
-				        tie.Fecha,
-				        MAX(estfin.Saldo_Sincierre_Total_Moneda_0) AS Valor_Activo
-				    FROM PROD_DWH_CONSULTA.ESTFIN_INDIV estfin
-				    JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
-				    JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
-				    JOIN PROD_DWH_CONSULTA.PUC puc ON estfin.Puc_ID = puc.Puc_ID
-				    WHERE ent.Tipo_Entidad = 23
-				      AND ent.Codigo_Entidad = ?
-				      AND tie.Fecha = ?
-				      AND estfin.Tipo_Informe = 0
-				    GROUP BY tie.Fecha
-				),
-				ValoresAnteriores AS (
-				    SELECT
-				        estfin.Ent_ID,
-				        estfin.Puc_ID,
-				        puc.Codigo,
-				        MAX(estfin.Saldo_Sincierre_Total_Moneda_0) AS Valor_Anterior
-				    FROM PROD_DWH_CONSULTA.ESTFIN_INDIV estfin
-				    JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
-				    JOIN PROD_DWH_CONSULTA.PUC puc ON estfin.Puc_ID = puc.Puc_ID
-				    JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
-				    WHERE tie.Fecha = ?
-				      AND ent.Tipo_Entidad = 23
-				      AND ent.Codigo_Entidad = ?
-				      AND estfin.Tipo_Informe = 0
-				    GROUP BY estfin.Ent_ID, estfin.Puc_ID, puc.Codigo
-				)
-				SELECT
-				    puc.Nombre AS Nombre_Cuenta,
-				    puc.Codigo,
+            //Opera las cuentas que haya al hacer l.getCuentas
+            for (CuentaBalance t : l.getCuentas()) {
+                Map<String,Object> r = porCodigo.get(t.getCodigo());
+                double va = (r != null && r.get("valor_actual") != null)   ? ((Number) r.get("valor_actual")).doubleValue()   : 0.0;
+                double vp = (r != null && r.get("valor_anterior") != null) ? ((Number) r.get("valor_anterior")).doubleValue() : 0.0;
 
-				    ROUND(MAX(CASE
-				        WHEN tie.Fecha = ?
-				        THEN estfin.Saldo_Sincierre_Total_Moneda_0 / 1000000
-				    END), 2) AS Valor_Actual_Millones,
+                actual   += t.getSigno() * va;
+                anterior += t.getSigno() * vp;
+            }
 
-				    ROUND(val_ant.Valor_Anterior / 1000000, 2) AS Valor_Anterior_Millones,
+            Double porcentaje = (activoTotal != null && activoTotal != 0)
+                    ? (actual / activoTotal) * 100.0
+                    : null;
 
-				    ROUND(MAX(CASE
-				        WHEN tie.Fecha = ?
-				        THEN (estfin.Saldo_Sincierre_Total_Moneda_0 / act.Valor_Activo) * 100
-				    END), 1) AS Porcentaje_Participacion_Actual,
+            Double variacion = (anterior != 0)
+                    ? ((actual - anterior) / anterior) * 100.0
+                    : null;
 
-				    ROUND(CASE
-				        WHEN val_ant.Valor_Anterior IS NULL OR val_ant.Valor_Anterior = 0
-				        THEN NULL
-				        ELSE ((MAX(CASE WHEN tie.Fecha = ? THEN estfin.Saldo_Sincierre_Total_Moneda_0 END) - val_ant.Valor_Anterior)
-				              / val_ant.Valor_Anterior) * 100
-				    END, 1) AS Variacion_Anual
+            Map<String,Object> fila = new LinkedHashMap<>();
+            fila.put("Nombre_Cuenta", l.getLinea());          // etiqueta de la fila (del CSV)
+            String codigoPUC = l.getCodigoPrincipal().orElse("");
+            fila.put("Codigo", codigoPUC);                            
+            fila.put("Valor_Actual_Millones", formatoConParentesis(actual));
+            fila.put("Valor_Anterior_Millones", formatoConParentesis(anterior));
+            fila.put("Porcentaje_Participacion_Actual", porcentaje);
+            fila.put("Variacion_Anual", variacion);
 
-				FROM PROD_DWH_CONSULTA.PUC puc
-				LEFT JOIN PROD_DWH_CONSULTA.ESTFIN_INDIV estfin ON estfin.Puc_ID = puc.Puc_ID
-				LEFT JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
-				LEFT JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
-				LEFT JOIN ActivoValores act ON tie.Fecha = ?
-				LEFT JOIN ValoresAnteriores val_ant ON puc.Puc_ID = val_ant.Puc_ID
-				WHERE ent.Tipo_Entidad = 23
-				  AND ent.Codigo_Entidad = ?
-				  AND tie.Fecha IN (?, ?)
-				  """
-				+ "AND puc.Codigo IN (" + placeholders + ") " + """
-						      AND (tie.Fecha IS NOT NULL OR estfin.Puc_ID IS NULL)
-						    GROUP BY puc.Nombre, puc.Codigo, val_ant.Valor_Anterior
-						    ORDER BY puc.Codigo
-						""";
+            out.add(fila);
+        }
 
-		// Armar parámetros de forma ordenada
-		List<Object> parametros = new ArrayList<>();
-		parametros.add(codigoEntidad);
-		parametros.add(fechaMayor);
-		parametros.add(fechaMenor);
-		parametros.add(codigoEntidad);
-		parametros.add(fechaMayor);
-		parametros.add(fechaMayor);
-		parametros.add(fechaMayor);
-		parametros.add(fechaMayor);
-		parametros.add(codigoEntidad);
-		parametros.add(fechaMayor);
-		parametros.add(fechaMenor);
+        return out;
 
-		// Agregar códigos del IN
-		parametros.addAll(codigosPUC);
-
-		System.out.println("QUERY:\n" + sql);
-
-		return jdbcTemplate.queryForList(sql, parametros.toArray());
+//		List<String> codigosPUC = cuentasDesdeArchivo.leerCuentasDesdeCSV("archCuentasBalance.csv", true, ";",
+//				String.class);
+//
+//		// Validar lista no vacía
+//		if (codigosPUC.isEmpty()) {
+//			throw new RuntimeException("La lista de códigos PUC está vacía.");
+//		}
+//		// Crear placeholders dinámicos: ?, ?, ?, ...
+//		String placeholders = codigosPUC.stream().map(c -> "?").collect(Collectors.joining(", "));
+//
+//		// Construir SQL con los códigos insertados en el IN (...)
+//		String sql = """
+//				WITH ActivoValores AS (
+//				    SELECT
+//				        tie.Fecha,
+//				        SUM(estfin.Saldo_Sincierre_Total_Moneda_0) AS Valor_Activo
+//				    FROM PROD_DWH_CONSULTA.ESTFIN_INDIV estfin
+//				    JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
+//				    JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
+//				    JOIN PROD_DWH_CONSULTA.PUC puc ON estfin.Puc_ID = puc.Puc_ID
+//				    WHERE ent.Tipo_Entidad = 23
+//				      AND ent.Codigo_Entidad = ?
+//				      AND tie.Fecha = ?
+//				      AND estfin.Tipo_Informe = 0
+//				      AND puc.codigo = 100000
+//				    GROUP BY tie.Fecha
+//				),
+//				ValoresAnteriores AS (
+//				    SELECT
+//				        estfin.Ent_ID,
+//				        estfin.Puc_ID,
+//				        puc.Codigo,
+//				        MAX(estfin.Saldo_Sincierre_Total_Moneda_0) AS Valor_Anterior
+//				    FROM PROD_DWH_CONSULTA.ESTFIN_INDIV estfin
+//				    JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
+//				    JOIN PROD_DWH_CONSULTA.PUC puc ON estfin.Puc_ID = puc.Puc_ID
+//				    JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
+//				    WHERE tie.Fecha = ?
+//				      AND ent.Tipo_Entidad = 23
+//				      AND ent.Codigo_Entidad = ?
+//				      AND estfin.Tipo_Informe = 0
+//				    GROUP BY estfin.Ent_ID, estfin.Puc_ID, puc.Codigo
+//				)
+//				SELECT
+//				    puc.Nombre AS Nombre_Cuenta,
+//				    puc.Codigo,
+//
+//				    ROUND(MAX(CASE
+//				        WHEN tie.Fecha = ?
+//				        THEN estfin.Saldo_Sincierre_Total_Moneda_0 / 1000000
+//				    END), 2) AS Valor_Actual_Millones,
+//
+//				    ROUND(val_ant.Valor_Anterior / 1000000, 2) AS Valor_Anterior_Millones,
+//
+//				    ROUND(MAX(CASE
+//				        WHEN tie.Fecha = ?
+//				        THEN (estfin.Saldo_Sincierre_Total_Moneda_0 / act.Valor_Activo) * 100
+//				    END), 1) AS Porcentaje_Participacion_Actual,
+//
+//				    ROUND(CASE
+//				        WHEN val_ant.Valor_Anterior IS NULL OR val_ant.Valor_Anterior = 0
+//				        THEN NULL
+//				        ELSE ((MAX(CASE WHEN tie.Fecha = ? THEN estfin.Saldo_Sincierre_Total_Moneda_0 END) - val_ant.Valor_Anterior)
+//				              / val_ant.Valor_Anterior) * 100
+//				    END, 1) AS Variacion_Anual
+//
+//				FROM PROD_DWH_CONSULTA.PUC puc
+//				LEFT JOIN PROD_DWH_CONSULTA.ESTFIN_INDIV estfin ON estfin.Puc_ID = puc.Puc_ID
+//				LEFT JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
+//				LEFT JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
+//				LEFT JOIN ActivoValores act ON tie.Fecha = ?
+//				LEFT JOIN ValoresAnteriores val_ant ON puc.Puc_ID = val_ant.Puc_ID
+//				WHERE ent.Tipo_Entidad = 23
+//				  AND ent.Codigo_Entidad = ?
+//				  AND tie.Fecha IN (?, ?)
+//				  """
+//				+ "AND puc.Codigo IN (" + placeholders + ") " + """
+//						      AND (tie.Fecha IS NOT NULL OR estfin.Puc_ID IS NULL)
+//						    GROUP BY puc.Nombre, puc.Codigo, val_ant.Valor_Anterior
+//						    ORDER BY puc.Codigo
+//						""";
+//
+//		// Armar parámetros de forma ordenada
+//		List<Object> parametros = new ArrayList<>();
+//		parametros.add(codigoEntidad);
+//		parametros.add(fechaMayor);
+//		parametros.add(fechaMenor);
+//		parametros.add(codigoEntidad);
+//		parametros.add(fechaMayor);
+//		parametros.add(fechaMayor);
+//		parametros.add(fechaMayor);
+//		parametros.add(fechaMayor);
+//		parametros.add(codigoEntidad);
+//		parametros.add(fechaMayor);
+//		parametros.add(fechaMenor);
+//
+//		// Agregar códigos del IN
+//		parametros.addAll(codigosPUC);
+//
+//	    if (log.isDebugEnabled()) {
+//	        log.debug("QUERY DEBUG Balance:\n{}", buildDebugSql(sql, parametros));
+//	    }
+//
+//		return jdbcTemplate.queryForList(sql, parametros.toArray());
 	}
 
 	public List<Map<String, Object>> obtenerBalance(int codigoEntidad, String fechaMayor) {
@@ -316,11 +476,90 @@ public class ServicioConsultasAlaBD {
 				    ORDER BY puc.Clase, puc.Grupo, puc.Cuenta, puc.Subcuenta
 				""";
 
-
 		return jdbcTemplate.queryForList(sql, codigoEntidad, fechaMayor, fechaMenor, codigoEntidad, fechaMayor,
 				fechaMayor, codigoEntidad, fechaMayor, fechaMenor);
 
 	}
+	
+    private Double obtenerActivoTotal(int codigoEntidad, String fechaMayor) {
+        String sql = """
+            SELECT ROUND(MAX(EF.Saldo_Sincierre_Total_Moneda_0)/1000000, 2) AS activo
+            FROM PROD_DWH_CONSULTA.ESTFIN_INDIV EF
+            JOIN PROD_DWH_CONSULTA.ENTIDADES E ON E.Ent_ID = EF.Ent_ID
+            JOIN PROD_DWH_CONSULTA.TIEMPO T ON T.Tie_ID = EF.Tie_ID
+            JOIN PROD_DWH_CONSULTA.PUC PUC ON EF.Puc_ID = PUC.Puc_ID
+            WHERE E.Tipo_Entidad = 23
+              AND E.Codigo_Entidad = ?
+              AND T.Fecha = ?
+              AND EF.Tipo_Informe = 0  
+              AND PUC.codigo = 100000
+        """;
+        List<Map<String,Object>> r = jdbcTemplate.queryForList(sql, codigoEntidad, fechaMayor);
+        if (r.isEmpty() || r.get(0).get("activo") == null) return null;
+        return ((Number) r.get(0).get("activo")).doubleValue();
+    }
+	
+	private Map<String, Map<String,Object>> consultarValoresPorCodigo(
+            int codigoEntidad, String fechaMayor, String fechaMenor, Set<String> codigos) {
+
+        if (codigos.isEmpty()) return Collections.emptyMap();
+        
+		Logger log = LoggerFactory.getLogger(getClass());
+
+        String placeholders = codigos.stream().map(c -> "?").collect(Collectors.joining(","));
+        String sql = """
+            SELECT P.Codigo,
+                   ROUND(MAX(CASE WHEN T.Fecha = ? THEN EF.Saldo_Sincierre_Total_Moneda_0 END)/1000000, 2) AS valor_actual,
+                   ROUND(MAX(CASE WHEN T.Fecha = ? THEN EF.Saldo_Sincierre_Total_Moneda_0 END)/1000000, 2) AS valor_anterior
+            FROM PROD_DWH_CONSULTA.ESTFIN_INDIV EF
+            JOIN PROD_DWH_CONSULTA.TIEMPO T ON T.Tie_ID = EF.Tie_ID
+            JOIN PROD_DWH_CONSULTA.ENTIDADES E ON E.Ent_ID = EF.Ent_ID
+            JOIN PROD_DWH_CONSULTA.PUC P ON P.Puc_ID = EF.Puc_ID
+            WHERE E.Tipo_Entidad = 23
+              AND E.Codigo_Entidad = ?
+              AND T.Fecha IN (?, ?)
+              AND EF.Tipo_Informe = 0
+              AND P.Codigo IN (""" + placeholders + ") " + """
+            GROUP BY P.Codigo
+        """;
+
+        List<Object> params = new ArrayList<>();
+        params.add(fechaMayor);   // para valor_actual
+        params.add(fechaMenor);   // para valor_anterior
+        params.add(codigoEntidad);
+        params.add(fechaMayor);
+        params.add(fechaMenor);
+        params.addAll(codigos);
+
+        if (log.isDebugEnabled()) log.debug("BALANCE SQL BASE:\n{}", buildDebugSql(sql, params));
+
+        List<Map<String,Object>> rows = jdbcTemplate.queryForList(sql, params.toArray());
+        Map<String, Map<String,Object>> porCodigo = new HashMap<>();
+        for (Map<String,Object> r : rows) {
+            porCodigo.put(String.valueOf(r.get("Codigo")), r);
+        }
+        return porCodigo;
+    }
+	
+	
+	private String buildDebugSql(String sql, List<Object> params) {
+	    String debug = sql;
+	    for (Object p : params) {
+	        String rep;
+	        if (p == null) {
+	            rep = "NULL";
+	        } else if (p instanceof Number) {
+	            rep = p.toString();
+	        } else {
+	            // texto/fecha: comilla simple y escapar comillas internas
+	            rep = "'" + p.toString().replace("'", "''") + "'";
+	        }
+	        // Reemplaza el primer '?' por el valor, cuidando regex y backrefs
+	        debug = debug.replaceFirst("\\?", Matcher.quoteReplacement(rep));
+	    }
+	    return debug;
+	}
+
 
 	// Método auxiliar para calcular la fecha menor (tres meses antes)
 	public String calcularFechaMenor(String fechaMayorStr) {
@@ -337,6 +576,14 @@ public class ServicioConsultasAlaBD {
 		return fechaMenorAjustada.format(formatter);
 	}
 
+	private String formatoConParentesis(double valor) {
+	    if (valor < 0) {
+	        return "(" + String.format("%,.2f", Math.abs(valor)) + ")";
+	    } else {
+	        return String.format("%,.2f", valor);
+	    }
+	}
+	
 	public byte[] generarReporteExcel(int codigoEntidad, String fechaMayor) throws IOException {
 		List<Map<String, Object>> datosBalance = obtenerBalance(codigoEntidad, fechaMayor);
 
@@ -388,5 +635,7 @@ public class ServicioConsultasAlaBD {
 		style.setFont(font);
 		return style;
 	}
+	
+
 
 }

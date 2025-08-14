@@ -1,22 +1,23 @@
-﻿clase;grupo;cuenta;subcuenta
-1;0;0;0
-1;1;0;0
-1;3;0;0
-1;6;0;0
-1;8;0;0
-1;9;0;0
-2;0;0;0
-2;1;0;0
-2;2;0;0
-2;4;35;0
-2;5;0;0
-2;7;0;0
-2;8;0;0
-2;9;0;0
-3;0;0;0
-3;1;0;0
-3;2;0;0
-3;8;0;0
-3;9;5;0
-3;9;10;0
-3;9;15;0
+﻿orden;linea;signo;codigo
+1;Activos;+;100000
+2;Efectivo;+;110000
+3;Inversiones y derivados;+;130000
+4;Cuentas por cobrar ;+;160000
+5;Activos Materiales ;+;180000
+6;Otros activos;+;190000
+7;Pasivos;+;200000
+8;Instrumentos financieros a costo Amortizado;+;210000
+9;Instrumentos financieros a valor razonable;+;220000
+10;Obligaciones financieras;+;243500
+11;Cuentas por pagar;+;250000
+12;Obligaciones laborales;+;270000
+13;Provisiones;+;280000
+14;Otros pasivos;+;290000
+15;Patrimonio;+;300000
+16;Capital social;+;310000
+17;Reservas;+;320000
+18;Superávit o déficit;+;380000
+19;Ganancia o Perdida del Ejercicio;+;391500
+20;Ganancias o pérdidas Acumuladas Ejercicios Anteriores;+;390500
+20;Ganancias o pérdidas Acumuladas Ejercicios Anteriores;-;391000
+20;Ganancias o pérdidas Acumuladas Ejercicios Anteriores;+;393000
