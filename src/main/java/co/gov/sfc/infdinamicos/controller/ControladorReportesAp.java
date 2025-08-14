@@ -1,6 +1,7 @@
 package co.gov.sfc.infdinamicos.controller;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -39,19 +40,31 @@ public class ControladorReportesAp {
 
 		List<Map<String, Object>> datosReporte = consultasAlaBD.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
 		List<Map<String, Object>> estadoResultados = consultasAlaBD.obtenerEstadoResultados(codigoEntidad, fechaMayor);
+		
+	    LocalDate f = LocalDate.parse(fechaMayor);
+	    DateTimeFormatter fmtCab = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es"));
+	    String cabActual = YearMonth.from(f).atEndOfMonth().format(fmtCab);
+	    String cabT3     = YearMonth.from(f).minusMonths(3).atEndOfMonth().format(fmtCab);
+	    String cabT12    = YearMonth.from(f).minusYears(1).atEndOfMonth().format(fmtCab);
+		
         model.addAttribute("datosReporte", datosReporte);
 		model.addAttribute("estadoResultados", estadoResultados);
         model.addAttribute("codigoEntidad", codigoEntidad);
         
-        String fechaMenorStr = consultasAlaBD.calcularFechaMenor(fechaMayor);  
-        LocalDate fechaMenor = LocalDate.parse(fechaMenorStr); // Convertir a LocalDate
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es"));
-        String fechaMenorFormateada = fechaMenor.format(formatter);
-        model.addAttribute("fechaMenorFormateada", fechaMenorFormateada);
+//        String fechaMenorStr = consultasAlaBD.calcularFechaMenor(fechaMayor);  
+//        LocalDate fechaMenor = LocalDate.parse(fechaMenorStr); // Convertir a LocalDate
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es"));
+//        String fechaMenorFormateada = fechaMenor.format(formatter);
+//        model.addAttribute("fechaMenorFormateada", fechaMenorFormateada);
         
-        LocalDate fecha = LocalDate.parse(fechaMayor);
-        String fechaFormateada = fecha.format(formatter);
-        model.addAttribute("fechaFormateada", fechaFormateada); // nuevo atributo
+//        LocalDate fecha = LocalDate.parse(fechaMayor);
+//        String fechaFormateada = fecha.format(formatter);
+//        model.addAttribute("fechaFormateada", fechaFormateada); // nuevo atributo
+        model.addAttribute("fechaMayor", fechaMayor);
+        model.addAttribute("cabActual", cabActual);
+        model.addAttribute("cabT3", cabT3);
+        model.addAttribute("cabT12", cabT12);
+        
         return "/reportes/financieros";
 	}    
     /**/

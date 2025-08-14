@@ -50,111 +50,33 @@ public class ServicioConsultasAlaBD {
 		return jdbcTemplate.queryForList(sql);
 	}
 
-//	public List<Map<String, Object>> obtenerReporteBalanceDinamico(int codigoEntidad, String fechaMayor) {
-//	    Logger log = LoggerFactory.getLogger(getClass());
-//
-//	    String fechaMenor = calcularFechaMenor(fechaMayor);
-//
-//	    // 1) CSV -> líneas (cada línea tiene cuentas con signos)
-//	    List<LineaBalance> lineas = cuentasDesdeArchivo.leerLineasBalanceDesdeCSV("archCuentasBalance.csv", true, ";");
-//
-//	    // 2) Set de códigos únicos
-//	    Set<String> codigosUnicos = lineas.stream()
-//	        .flatMap(l -> l.getCuentas().stream().map(CuentaBalance::getCodigo))
-//	        .collect(Collectors.toCollection(LinkedHashSet::new));
-//
-//	    if (codigosUnicos.isEmpty()) throw new RuntimeException("No hay códigos en el CSV.");
-//
-//	    // 3) Query base por código (una sola vez)
-//	    String placeholders = codigosUnicos.stream().map(c -> "?").collect(Collectors.joining(","));
-//	    String sql = """
-//	        SELECT P.Codigo,
-//	               ROUND(MAX(CASE WHEN T.Fecha = ? THEN EF.Saldo_Sincierre_Total_Moneda_0 END)/1000000, 2) AS valor_actual,
-//	               ROUND(MAX(CASE WHEN T.Fecha = ? THEN EF.Saldo_Sincierre_Total_Moneda_0 END)/1000000, 2) AS valor_anterior
-//	        FROM PROD_DWH_CONSULTA.ESTFIN_INDIV EF
-//	        JOIN PROD_DWH_CONSULTA.TIEMPO T ON T.Tie_ID = EF.Tie_ID
-//	        JOIN PROD_DWH_CONSULTA.ENTIDADES E ON E.Ent_ID = EF.Ent_ID
-//	        JOIN PROD_DWH_CONSULTA.PUC P ON P.Puc_ID = EF.Puc_ID
-//	        WHERE E.Tipo_Entidad = 23
-//	          AND E.Codigo_Entidad = ?
-//	          AND T.Fecha IN (?, ?)
-//	          AND EF.Tipo_Informe = 0
-//	          AND P.Codigo IN (""" + placeholders + ") " + """
-//	        GROUP BY P.Codigo
-//	    """;
-//
-//	    List<Object> params = new ArrayList<>();
-//	    params.add(fechaMayor);   // CASE actual
-//	    params.add(fechaMenor);   // CASE anterior
-//	    params.add(codigoEntidad);
-//	    params.add(fechaMayor);
-//	    params.add(fechaMenor);
-//	    params.addAll(codigosUnicos);
-//
-//	    if (log.isDebugEnabled()) {
-//	        log.debug("BALANCE SQL BASE:\n{}", buildDebugSql(sql, params));
-//	    }
-//
-//	    List<Map<String, Object>> filasCodigos = jdbcTemplate.queryForList(sql, params.toArray());
-//
-//	    // 4) Índice por código
-//	    Map<String, Map<String, Object>> porCodigo = new HashMap<>();
-//	    for (Map<String, Object> r : filasCodigos) {
-//	        porCodigo.put(String.valueOf(r.get("Codigo")), r);
-//	    }
-//
-//	    // 5) (Opcional) traer activo total para porcentaje
-//	    Double activoTotal = obtenerActivoTotal(codigoEntidad, fechaMayor); // tu CTE/consulta actual
-//
-//	    // 6) Armar líneas aplicando signos
-//	    List<Map<String, Object>> resultado = new ArrayList<>();
-//
-//	    for (LineaBalance l : lineas) {
-//	        double actual = 0.0;
-//	        double anterior = 0.0;
-//
-//	        for (TerminoBalance t : l.getTerminos()) {
-//	            Map<String, Object> row = porCodigo.get(t.getCodigo());
-//	            if (row != null) {
-//	                Double va = row.get("valor_actual")   != null ? ((Number) row.get("valor_actual")).doubleValue()   : 0.0;
-//	                Double vp = row.get("valor_anterior") != null ? ((Number) row.get("valor_anterior")).doubleValue() : 0.0;
-//	                actual   += t.getSigno() * va;
-//	                anterior += t.getSigno() * vp;
-//	            }
-//	        }
-//
-//	        Double porcentaje = null;
-//	        if (activoTotal != null && activoTotal != 0) {
-//	            porcentaje = (actual / activoTotal) * 100.0;
-//	        }
-//
-//	        Double variacion = null;
-//	        if (anterior != 0) {
-//	            variacion = ((actual - anterior) / anterior) * 100.0;
-//	        }
-//
-//	        Map<String, Object> fila = new LinkedHashMap<>();
-//	        fila.put("Nombre_Cuenta", l.getLinea());
-//	        fila.put("Codigo", ""); //Se puede dejar vacío o el primer código
-//	        fila.put("Valor_Actual_Millones", actual);
-//	        fila.put("Valor_Anterior_Millones", anterior);
-//	        fila.put("Porcentaje_Participacion_Actual", porcentaje);
-//	        fila.put("Variacion_Anual", variacion);
-//
-//	        resultado.add(fila);
-//	    }
-//
-//	    // 7) Ordenar por 'orden' (ya vienen ordenadas; si quieres explícito:)
-//	    // resultado ya sigue el orden de 'lineas'
-//
-//	    return resultado;
-//	}
+	// --- Helpers de fechas ---
+	private String finDeMesMenosMeses(String fechaISOyyyyMMdd, int meses) {
+	    LocalDate f = LocalDate.parse(fechaISOyyyyMMdd);
+	    YearMonth ym = YearMonth.from(f).minusMonths(meses);
+	    return ym.atEndOfMonth().toString(); // yyyy-MM-dd
+	}
+
+	private String finDeMesMenosAnios(String fechaISOyyyyMMdd, int anios) {
+	    LocalDate f = LocalDate.parse(fechaISOyyyyMMdd);
+	    YearMonth ym = YearMonth.from(f).minusYears(anios);
+	    return ym.atEndOfMonth().toString(); // yyyy-MM-dd
+	}
+
+	private double asDouble(Object v) {
+	    return (v == null) ? 0.0 : ((Number) v).doubleValue();
+	}
+
 
 	
 	
 	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
 
 		Logger log = LoggerFactory.getLogger(getClass());
+		
+	    // Fechas comparativas
+	    String fechaT3  = finDeMesMenosMeses(fecha, 3);  // tres meses antes
+	    String fechaT12 = finDeMesMenosAnios(fecha, 1);  // un año antes
 
 		Map<String, GrupoEstadoResultados> gruposCuentas = cuentasDesdeArchivo
 				.armarGruposDeCuentas("archEstadoResultados.csv", true, ";");
@@ -162,52 +84,68 @@ public class ServicioConsultasAlaBD {
 		List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
 
 		// Guardar totales
-		double totalIngresos = 0.0;
-		double totalGastos = 0.0;
+		double totalIngresosActual = 0.0;
+		double totalGastosActual = 0.0;
 
 		Integer ordencatActual = null;
 		int posInicioSeccion = 0; // para insertar total al inicio de cada sección
 
 		for (Map.Entry<String, GrupoEstadoResultados> entry : gruposCuentas.entrySet()) {
 			GrupoEstadoResultados g = entry.getValue();
-			if (ordencatActual != null && g.getOrdencat() != ordencatActual) {
-				if (ordencatActual == 1) {
-					Map<String, Object> totalIng = new HashMap<>();
-					totalIng.put("Grupo", "TOTAL INGRESOS");
-					totalIng.put("total_saldo", totalIngresos);
-					totalIng.put("esTotal", true);
-					filasDeEstadoResultados.add(posInicioSeccion, totalIng);
-				} else if (ordencatActual == 2) {
-					Map<String, Object> totalGas = new HashMap<>();
-					totalGas.put("Grupo", "TOTAL GASTOS");
-					totalGas.put("total_saldo", totalGastos);
-					totalGas.put("esTotal", true);
-					filasDeEstadoResultados.add(posInicioSeccion, totalGas);
-				}
-				// nueva sección comienza aquí
-				posInicioSeccion = filasDeEstadoResultados.size();
-			}
-
-			ordencatActual = g.getOrdencat();
+			
+	        // Si cambia la categoría, cierra la anterior insertando el total UNA VEZ
+	        if (ordencatActual != null && g.getOrdencat() != ordencatActual) {
+	            if (ordencatActual == 1) {
+	                Map<String,Object> totIng = new HashMap<>();
+	                totIng.put("Grupo", "TOTAL INGRESOS");
+	                totIng.put("actual", totalIngresosActual);
+	                totIng.put("tresMeses", null);
+	                totIng.put("unAnio", null);
+	                totIng.put("varTrim", null);
+	                totIng.put("varAnual", null);
+	                totIng.put("esTotal", true);
+	                filasDeEstadoResultados.add(posInicioSeccion, totIng);
+	            } else if (ordencatActual == 2) {
+	                Map<String,Object> totGas = new HashMap<>();
+	                totGas.put("Grupo", "TOTAL GASTOS");
+	                totGas.put("actual", totalGastosActual);
+	                totGas.put("tresMeses", null);
+	                totGas.put("unAnio", null);
+	                totGas.put("varTrim", null);
+	                totGas.put("varAnual", null);
+	                totGas.put("esTotal", true);
+	                filasDeEstadoResultados.add(posInicioSeccion, totGas);
+	            }
+	            posInicioSeccion = filasDeEstadoResultados.size();
+	        }
+	        ordencatActual = g.getOrdencat();
 
 			// Crear placeholders dinámicos
 			String placeholders = g.getCuentas().stream().map(c -> "?").collect(Collectors.joining(", "));
 
 			// Query
 			String query = "SELECT '" + g.getNombreGrupo() + "' AS Grupo, "
-					+ "ROUND(SUM(ef.Saldo_Sincierre_Total_Moneda_0)/1000000,2) AS total_saldo "
+					+ "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS actual, " 
+					+ "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS tresMeses, " 
+					+ "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS unAnio " 
 					+ "FROM prod_dwh_consulta.estfin_indiv ef "
 					+ "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID "
 					+ "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID "
-					+ "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " + "WHERE T.Fecha = ? "
-					+ "AND E.Tipo_Entidad = 23 " + "AND E.Codigo_Entidad = ? " + "AND ef.Tipo_Informe = 0 "
-					+ "AND P.codigo IN (" + placeholders + ")";
+					+ "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " 
+					+ "WHERE E.Tipo_Entidad = 23 " + "AND E.Codigo_Entidad = ? " + "AND ef.Tipo_Informe = 0 "
+					+ "AND P.codigo IN (" + placeholders + ") " 
+					+ "AND   T.Fecha IN (?, ?, ?)";
 
 			// Parámetros
 			List<Object> params = new ArrayList<>();
-			params.add(fecha);
+	        params.add(fecha);
+	        params.add(fechaT3);
+	        params.add(fechaT12);
 			params.add(codigoEntidad);
 			params.addAll(g.getCuentas());
+	        params.add(fecha);
+	        params.add(fechaT3);
+	        params.add(fechaT12);			
 
 			if (log.isDebugEnabled()) {
 				String sqlDebug = query;
@@ -219,21 +157,60 @@ public class ServicioConsultasAlaBD {
 						g.getOrdencat(), sqlDebug);
 			}
 
-			Map<String, Object> fila = jdbcTemplate.queryForMap(query, params.toArray());
+			Map<String, Object> r = jdbcTemplate.queryForMap(query, params.toArray());
 
-			double saldo = fila.get("total_saldo") != null ? ((Number) fila.get("total_saldo")).doubleValue() : 0.0;
+			double actual = r.get("actual") != null ? ((Number) r.get("actual")).doubleValue() : 0.0;
+			double tresMeses = r.get("tresMeses") != null ? ((Number) r.get("tresMeses")).doubleValue() : 0.0;
+			double unAnio = r.get("unAnio") != null ? ((Number) r.get("unAnio")).doubleValue() : 0.0;
+			
 
+	        // Variaciones (%)
+	        Double varTrim  = (tresMeses == 0.0) ? null : ((actual - tresMeses) / tresMeses) * 100.0;
+	        Double varAnual = (unAnio    == 0.0) ? null : ((actual - unAnio)    / unAnio)    * 100.0;
+			
 			if (g.getOrdencat() == 1) {
-				totalIngresos += saldo;
+				totalIngresosActual += actual;
 			} else if (g.getOrdencat() == 2) {
-				totalGastos += saldo;
+				totalGastosActual += actual;
 			} else {
 				log.warn("Categoría desconocida en CSV: '{}'", g.getCategoria());
 			}
+			
+	        Map<String,Object> fila = new HashMap<>();
+	        fila.put("Grupo", g.getNombreGrupo());
+	        fila.put("actual", actual);
+	        fila.put("tresMeses", tresMeses);
+	        fila.put("unAnio", unAnio);
+	        fila.put("varTrim", varTrim);
+	        fila.put("varAnual", varAnual);
+	        fila.put("esTotal", false);
 
 			filasDeEstadoResultados.add(fila);
 		}
-
+	    // Cierra la última sección
+	    if (ordencatActual != null) {
+	        if (ordencatActual == 1) {
+	            Map<String,Object> totIng = new HashMap<>();
+	            totIng.put("Grupo", "TOTAL INGRESOS");
+	            totIng.put("actual", totalIngresosActual);
+	            totIng.put("tresMeses", null);
+	            totIng.put("unAnio", null);
+	            totIng.put("varTrim", null);
+	            totIng.put("varAnual", null);
+	            totIng.put("esTotal", true);
+	            filasDeEstadoResultados.add(posInicioSeccion, totIng);
+	        } else if (ordencatActual == 2) {
+	            Map<String,Object> totGas = new HashMap<>();
+	            totGas.put("Grupo", "TOTAL GASTOS");
+	            totGas.put("actual", totalGastosActual);
+	            totGas.put("tresMeses", null);
+	            totGas.put("unAnio", null);
+	            totGas.put("varTrim", null);
+	            totGas.put("varAnual", null);
+	            totGas.put("esTotal", true);
+	            filasDeEstadoResultados.add(posInicioSeccion, totGas);
+	        }
+	    }
 		return filasDeEstadoResultados;
 	}
 

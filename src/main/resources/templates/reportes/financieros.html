@@ -88,7 +88,7 @@
 			</tbody>
 
 		</table>
-				<p class="texto-nota">Incluye resultados de ejercicios anteriores</p>
+		<p class="texto-nota">Incluye resultados de ejercicios anteriores</p>
 
 		<!-- Botón para descargar el reporte en Excel -->
 		<a class="btn btn-success"
@@ -101,7 +101,11 @@
 			<thead>
 				<tr>
 					<th>Concepto</th>
-					<th th:text="${fechaFormateada}">Valor Actual</th>
+					<th th:text="${cabActual}">Actual</th>
+					<th th:text="${cabT3}">-3 meses</th>
+					<th th:text="${cabT12}">-12 meses</th>
+					<th>Var. Trimestral (%)</th>
+					<th>Var. Anual (%)</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -109,9 +113,28 @@
 					th:classappend="${fila['esTotal'] == true} ? ' total-row'">
 					<td th:text="${fila['Grupo']}"></td>
 					<td
-						th:text="${fila['total_saldo'] != null 
-  ? #numbers.formatDecimal(fila['total_saldo'], 1, 'COMMA', 2, 'POINT') 
-  : '-'}"></td>
+						th:text="${fila['actual'] == null ? '-' :
+            (fila['actual'] < 0 ? '(' + #numbers.formatDecimal(-fila['actual'], 1, 'COMMA', 2, 'POINT') + ')'
+                                :      #numbers.formatDecimal(fila['actual'],   1, 'COMMA', 2, 'POINT'))}">
+					</td>
+
+					<td
+						th:text="${fila['tresMeses'] == null ? '-' :
+            (fila['tresMeses'] < 0 ? '(' + #numbers.formatDecimal(-fila['tresMeses'], 1, 'COMMA', 2, 'POINT') + ')'
+                                   :      #numbers.formatDecimal(fila['tresMeses'],   1, 'COMMA', 2, 'POINT'))}">
+					</td>
+
+					<td
+						th:text="${fila['unAnio'] == null ? '-' :
+            (fila['unAnio'] < 0 ? '(' + #numbers.formatDecimal(-fila['unAnio'], 1, 'COMMA', 2, 'POINT') + ')'
+                                :      #numbers.formatDecimal(fila['unAnio'],   1, 'COMMA', 2, 'POINT'))}">
+					</td>
+
+					<!-- Porcentajes; si null, muestra '-' -->
+					<td
+						th:text="${fila['varTrim'] == null ? '-' : #numbers.formatDecimal(fila['varTrim'], 1, 'COMMA', 2, 'POINT')}"></td>
+					<td
+						th:text="${fila['varAnual'] == null ? '-' : #numbers.formatDecimal(fila['varAnual'], 1, 'COMMA', 2, 'POINT')}"></td>
 				</tr>
 			</tbody>
 		</table>
