@@ -30,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -65,146 +66,118 @@ public class ServicioConsultasAlaBD {
 
 	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
 
-		Logger log = LoggerFactory.getLogger(getClass());
-		
+	    Logger log = LoggerFactory.getLogger(getClass());
+
 	    // Fechas comparativas
 	    String fechaT3  = finDeMesMenosMeses(fecha, 3);  // tres meses antes
 	    String fechaT12 = finDeMesMenosAnios(fecha, 1);  // un año antes
 
-		Map<String, GrupoEstadoResultados> gruposCuentas = cuentasDesdeArchivo
-				.armarGruposDeCuentas("archEstadoResultados.csv", true, ";");
+	    Map<String, GrupoEstadoResultados> gruposCuentas =
+	            cuentasDesdeArchivo.armarGruposDeCuentas("archEstadoResultados.csv", true, ";");
 
-		List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
+	    List<Map<String, Object>> filasDeEstadoResultados = new ArrayList<>();
 
-		// Guardar totales
-		double totalIngresosActual = 0.0;
-		double totalGastosActual = 0.0;
+	    Integer ordencatActual = null;      // 1=Ingresos, 2=Gastos, 3=Otros
+	    int posInicioSeccion = 0;           // para insertar la fila TOTAL de la categoría
+	    double totalActualCat  = 0.0;
+	    double totalT3Cat      = 0.0;
+	    double totalT12Cat     = 0.0;
 
-		Integer ordencatActual = null;
-		int posInicioSeccion = 0; // para insertar total al inicio de cada sección
+	    for (Map.Entry<String, GrupoEstadoResultados> entry : gruposCuentas.entrySet()) {
+	        GrupoEstadoResultados g = entry.getValue();
+	        int ordencatGrupo = g.getOrdencat(); 
 
-		for (Map.Entry<String, GrupoEstadoResultados> entry : gruposCuentas.entrySet()) {
-			GrupoEstadoResultados g = entry.getValue();
-			
-	        // Si cambia la categoría, cierra la anterior insertando el total UNA VEZ
-	        if (ordencatActual != null && g.getOrdencat() != ordencatActual) {
-	            if (ordencatActual == 1) {
-	                Map<String,Object> totIng = new HashMap<>();
-	                totIng.put("Grupo", "TOTAL INGRESOS");
-	                totIng.put("actual", totalIngresosActual);
-	                totIng.put("tresMeses", null);
-	                totIng.put("unAnio", null);
-	                totIng.put("varTrim", null);
-	                totIng.put("varAnual", null);
-	                totIng.put("esTotal", true);
-	                filasDeEstadoResultados.add(posInicioSeccion, totIng);
-	            } else if (ordencatActual == 2) {
-	                Map<String,Object> totGas = new HashMap<>();
-	                totGas.put("Grupo", "TOTAL GASTOS");
-	                totGas.put("actual", totalGastosActual);
-	                totGas.put("tresMeses", null);
-	                totGas.put("unAnio", null);
-	                totGas.put("varTrim", null);
-	                totGas.put("varAnual", null);
-	                totGas.put("esTotal", true);
-	                filasDeEstadoResultados.add(posInicioSeccion, totGas);
-	            }
+	        // Primera iteración: inicializa sección
+	        if (ordencatActual == null) {
+	            ordencatActual   = ordencatGrupo;
 	            posInicioSeccion = filasDeEstadoResultados.size();
 	        }
-	        ordencatActual = g.getOrdencat();
+	        // Cambió la categoría: cierra la anterior y abre la nueva
+	        else if (ordencatGrupo != ordencatActual) {
+	            insertarTotalCategoria(
+	                filasDeEstadoResultados,
+	                posInicioSeccion,
+	                ordencatActual,
+	                totalActualCat, totalT3Cat, totalT12Cat
+	            );
+	            // Nueva sección comienza aquí
+	            posInicioSeccion = filasDeEstadoResultados.size();
+	            ordencatActual   = ordencatGrupo;   // <-- ESTE era el faltante
+	            totalActualCat = totalT3Cat = totalT12Cat = 0.0;  // reinicia acumuladores
+	        }
 
-			// Crear placeholders dinámicos
-			String placeholders = g.getCuentas().stream().map(c -> "?").collect(Collectors.joining(", "));
+	        // Placeholders dinámicos
+	        String placeholders = g.getCuentas().stream()
+	                .map(c -> "?").collect(Collectors.joining(", "));
 
-			// Query
-			String query = "SELECT '" + g.getNombreGrupo() + "' AS Grupo, "
-					+ "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS actual, " 
-					+ "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS tresMeses, " 
-					+ "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS unAnio " 
-					+ "FROM prod_dwh_consulta.estfin_indiv ef "
-					+ "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID "
-					+ "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID "
-					+ "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " 
-					+ "WHERE E.Tipo_Entidad = 23 " + "AND E.Codigo_Entidad = ? " + "AND ef.Tipo_Informe = 0 "
-					+ "AND P.codigo IN (" + placeholders + ") " 
-					+ "AND   T.Fecha IN (?, ?, ?)";
+	        String query =
+	            "SELECT '" + g.getNombreGrupo() + "' AS Grupo, " +
+	            "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS actual, " +
+	            "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS tresMeses, " +
+	            "ROUND(SUM(CASE WHEN T.Fecha = ? THEN ef.Saldo_Sincierre_Total_Moneda_0 ELSE 0 END)/1000000,2) AS unAnio " +
+	            "FROM prod_dwh_consulta.estfin_indiv ef " +
+	            "JOIN prod_dwh_consulta.TIEMPO T ON T.Tie_ID = ef.Tie_ID " +
+	            "JOIN prod_dwh_consulta.ENTIDADES E ON E.Ent_ID = ef.Ent_ID " +
+	            "JOIN prod_dwh_consulta.PUC P ON P.Puc_ID = ef.Puc_ID " +
+	            "WHERE E.Tipo_Entidad = 23 " +
+	            "AND   E.Codigo_Entidad = ? " +
+	            "AND   ef.Tipo_Informe = 0 " +
+	            "AND   P.codigo IN (" + placeholders + ") " +
+	            "AND   T.Fecha IN (?, ?, ?)";
 
-			// Parámetros
-			List<Object> params = new ArrayList<>();
+	        List<Object> params = new ArrayList<>();
 	        params.add(fecha);
 	        params.add(fechaT3);
 	        params.add(fechaT12);
-			params.add(codigoEntidad);
-			params.addAll(g.getCuentas());
+	        params.add(codigoEntidad);
+	        params.addAll(g.getCuentas());
 	        params.add(fecha);
 	        params.add(fechaT3);
-	        params.add(fechaT12);			
+	        params.add(fechaT12);
 
-			if (log.isDebugEnabled()) {
-				String sqlDebug = query;
-				for (Object param : params) {
-					String value = (param instanceof String) ? "'" + param + "'" : String.valueOf(param);
-					sqlDebug = sqlDebug.replaceFirst("\\?", value);
-				}
-				log.debug("ER grupo='{}' cat='{}' ordencat={} ->\n{}", g.getNombreGrupo(), g.getCategoria(),
-						g.getOrdencat(), sqlDebug);
-			}
+	        if (log.isDebugEnabled()) {
+	            String sqlDebug = query;
+	            for (Object p : params) {
+	                String v = (p instanceof String) ? "'" + p + "'" : String.valueOf(p);
+	                sqlDebug = sqlDebug.replaceFirst("\\?", v);
+	            }
+	            log.debug("ER grupo='{}' cat='{}' ordencat={} ->\n{}",
+	                    g.getNombreGrupo(), g.getCategoria(), g.getOrdencat(), sqlDebug);
+	        }
 
-			Map<String, Object> r = jdbcTemplate.queryForMap(query, params.toArray());
+	        Map<String, Object> fila = jdbcTemplate.queryForMap(query, params.toArray());
 
-			double actual = r.get("actual") != null ? ((Number) r.get("actual")).doubleValue() : 0.0;
-			double tresMeses = r.get("tresMeses") != null ? ((Number) r.get("tresMeses")).doubleValue() : 0.0;
-			double unAnio = r.get("unAnio") != null ? ((Number) r.get("unAnio")).doubleValue() : 0.0;
-			
+	        double actual  = getAsDouble(fila.get("actual"));
+	        double tresMes = getAsDouble(fila.get("tresMeses"));
+	        double unAnio  = getAsDouble(fila.get("unAnio"));
 
-	        // Variaciones (%)
-	        Double varTrim  = (tresMeses == 0.0) ? null : ((actual - tresMeses) / tresMeses) * 100.0;
-	        Double varAnual = (unAnio    == 0.0) ? null : ((actual - unAnio)    / unAnio)    * 100.0;
-			
-			if (g.getOrdencat() == 1) {
-				totalIngresosActual += actual;
-			} else if (g.getOrdencat() == 2) {
-				totalGastosActual += actual;
-			} else {
-				log.warn("Categoría desconocida en CSV: '{}'", g.getCategoria());
-			}
-			
-	        Map<String,Object> fila = new HashMap<>();
-	        fila.put("Grupo", g.getNombreGrupo());
-	        fila.put("actual", actual);
-	        fila.put("tresMeses", tresMeses);
-	        fila.put("unAnio", unAnio);
+	        Double varTrim  = calcVarPct(actual, tresMes);
+	        Double varAnual = calcVarPct(actual, unAnio);
+
+	        if (g.getOrdencat() == 1 || g.getOrdencat() == 2) {
+	            totalActualCat += actual;
+	            totalT3Cat     += tresMes;
+	            totalT12Cat    += unAnio;
+	        }
+
 	        fila.put("varTrim", varTrim);
 	        fila.put("varAnual", varAnual);
 	        fila.put("esTotal", false);
 
-			filasDeEstadoResultados.add(fila);
-		}
-	    // Cierra la última sección
-	    if (ordencatActual != null) {
-	        if (ordencatActual == 1) {
-	            Map<String,Object> totIng = new HashMap<>();
-	            totIng.put("Grupo", "TOTAL INGRESOS");
-	            totIng.put("actual", totalIngresosActual);
-	            totIng.put("tresMeses", null);
-	            totIng.put("unAnio", null);
-	            totIng.put("varTrim", null);
-	            totIng.put("varAnual", null);
-	            totIng.put("esTotal", true);
-	            filasDeEstadoResultados.add(posInicioSeccion, totIng);
-	        } else if (ordencatActual == 2) {
-	            Map<String,Object> totGas = new HashMap<>();
-	            totGas.put("Grupo", "TOTAL GASTOS");
-	            totGas.put("actual", totalGastosActual);
-	            totGas.put("tresMeses", null);
-	            totGas.put("unAnio", null);
-	            totGas.put("varTrim", null);
-	            totGas.put("varAnual", null);
-	            totGas.put("esTotal", true);
-	            filasDeEstadoResultados.add(posInicioSeccion, totGas);
-	        }
+	        filasDeEstadoResultados.add(fila);
 	    }
-		return filasDeEstadoResultados;
+
+	    // Cerrar última categoría
+	    if (ordencatActual != null) {
+	        insertarTotalCategoria(
+	            filasDeEstadoResultados,
+	            posInicioSeccion,
+	            ordencatActual,
+	            totalActualCat, totalT3Cat, totalT12Cat
+	        );
+	    }
+
+	    return filasDeEstadoResultados;
 	}
 
 	public List<Map<String, Object>> obtenerReporteFinanciero(int codigoEntidad, String fechaMayor) {
@@ -264,110 +237,6 @@ public class ServicioConsultasAlaBD {
 
         return out;
 
-//		List<String> codigosPUC = cuentasDesdeArchivo.leerCuentasDesdeCSV("archCuentasBalance.csv", true, ";",
-//				String.class);
-//
-//		// Validar lista no vacía
-//		if (codigosPUC.isEmpty()) {
-//			throw new RuntimeException("La lista de códigos PUC está vacía.");
-//		}
-//		// Crear placeholders dinámicos: ?, ?, ?, ...
-//		String placeholders = codigosPUC.stream().map(c -> "?").collect(Collectors.joining(", "));
-//
-//		// Construir SQL con los códigos insertados en el IN (...)
-//		String sql = """
-//				WITH ActivoValores AS (
-//				    SELECT
-//				        tie.Fecha,
-//				        SUM(estfin.Saldo_Sincierre_Total_Moneda_0) AS Valor_Activo
-//				    FROM PROD_DWH_CONSULTA.ESTFIN_INDIV estfin
-//				    JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
-//				    JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
-//				    JOIN PROD_DWH_CONSULTA.PUC puc ON estfin.Puc_ID = puc.Puc_ID
-//				    WHERE ent.Tipo_Entidad = 23
-//				      AND ent.Codigo_Entidad = ?
-//				      AND tie.Fecha = ?
-//				      AND estfin.Tipo_Informe = 0
-//				      AND puc.codigo = 100000
-//				    GROUP BY tie.Fecha
-//				),
-//				ValoresAnteriores AS (
-//				    SELECT
-//				        estfin.Ent_ID,
-//				        estfin.Puc_ID,
-//				        puc.Codigo,
-//				        MAX(estfin.Saldo_Sincierre_Total_Moneda_0) AS Valor_Anterior
-//				    FROM PROD_DWH_CONSULTA.ESTFIN_INDIV estfin
-//				    JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
-//				    JOIN PROD_DWH_CONSULTA.PUC puc ON estfin.Puc_ID = puc.Puc_ID
-//				    JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
-//				    WHERE tie.Fecha = ?
-//				      AND ent.Tipo_Entidad = 23
-//				      AND ent.Codigo_Entidad = ?
-//				      AND estfin.Tipo_Informe = 0
-//				    GROUP BY estfin.Ent_ID, estfin.Puc_ID, puc.Codigo
-//				)
-//				SELECT
-//				    puc.Nombre AS Nombre_Cuenta,
-//				    puc.Codigo,
-//
-//				    ROUND(MAX(CASE
-//				        WHEN tie.Fecha = ?
-//				        THEN estfin.Saldo_Sincierre_Total_Moneda_0 / 1000000
-//				    END), 2) AS Valor_Actual_Millones,
-//
-//				    ROUND(val_ant.Valor_Anterior / 1000000, 2) AS Valor_Anterior_Millones,
-//
-//				    ROUND(MAX(CASE
-//				        WHEN tie.Fecha = ?
-//				        THEN (estfin.Saldo_Sincierre_Total_Moneda_0 / act.Valor_Activo) * 100
-//				    END), 1) AS Porcentaje_Participacion_Actual,
-//
-//				    ROUND(CASE
-//				        WHEN val_ant.Valor_Anterior IS NULL OR val_ant.Valor_Anterior = 0
-//				        THEN NULL
-//				        ELSE ((MAX(CASE WHEN tie.Fecha = ? THEN estfin.Saldo_Sincierre_Total_Moneda_0 END) - val_ant.Valor_Anterior)
-//				              / val_ant.Valor_Anterior) * 100
-//				    END, 1) AS Variacion_Anual
-//
-//				FROM PROD_DWH_CONSULTA.PUC puc
-//				LEFT JOIN PROD_DWH_CONSULTA.ESTFIN_INDIV estfin ON estfin.Puc_ID = puc.Puc_ID
-//				LEFT JOIN PROD_DWH_CONSULTA.TIEMPO tie ON estfin.Tie_ID = tie.Tie_ID
-//				LEFT JOIN PROD_DWH_CONSULTA.ENTIDADES ent ON estfin.Ent_ID = ent.Ent_ID
-//				LEFT JOIN ActivoValores act ON tie.Fecha = ?
-//				LEFT JOIN ValoresAnteriores val_ant ON puc.Puc_ID = val_ant.Puc_ID
-//				WHERE ent.Tipo_Entidad = 23
-//				  AND ent.Codigo_Entidad = ?
-//				  AND tie.Fecha IN (?, ?)
-//				  """
-//				+ "AND puc.Codigo IN (" + placeholders + ") " + """
-//						      AND (tie.Fecha IS NOT NULL OR estfin.Puc_ID IS NULL)
-//						    GROUP BY puc.Nombre, puc.Codigo, val_ant.Valor_Anterior
-//						    ORDER BY puc.Codigo
-//						""";
-//
-//		// Armar parámetros de forma ordenada
-//		List<Object> parametros = new ArrayList<>();
-//		parametros.add(codigoEntidad);
-//		parametros.add(fechaMayor);
-//		parametros.add(fechaMenor);
-//		parametros.add(codigoEntidad);
-//		parametros.add(fechaMayor);
-//		parametros.add(fechaMayor);
-//		parametros.add(fechaMayor);
-//		parametros.add(fechaMayor);
-//		parametros.add(codigoEntidad);
-//		parametros.add(fechaMayor);
-//		parametros.add(fechaMenor);
-//
-//		// Agregar códigos del IN
-//		parametros.addAll(codigosPUC);
-//
-//	    if (log.isDebugEnabled()) {
-//	        log.debug("QUERY DEBUG Balance:\n{}", buildDebugSql(sql, parametros));
-//	    }
-//
-//		return jdbcTemplate.queryForList(sql, parametros.toArray());
 	}
 
 	public List<Map<String, Object>> obtenerBalance(int codigoEntidad, String fechaMayor) {
@@ -449,6 +318,45 @@ public class ServicioConsultasAlaBD {
 		return jdbcTemplate.queryForList(sql, codigoEntidad, fechaMayor, fechaMenor, codigoEntidad, fechaMayor,
 				fechaMayor, codigoEntidad, fechaMayor, fechaMenor);
 
+	}
+	
+	private void insertarTotalCategoria(List<Map<String, Object>> filas,
+            int pos,
+            Integer ordencat,
+            double totalActualCat,
+            double totalT3Cat,
+            double totalT12Cat) {
+if (ordencat == null) return;
+
+String etiqueta = (ordencat == 1) ? "TOTAL INGRESOS"
+: (ordencat == 2) ? "TOTAL GASTOS"
+: null;
+if (etiqueta == null) return; // no totalizamos cat 3
+
+Double varTrim  = calcVarPct(totalActualCat, totalT3Cat);
+Double varAnual = calcVarPct(totalActualCat, totalT12Cat);
+
+Map<String, Object> totalRow = new HashMap<>();
+totalRow.put("Grupo", etiqueta);
+totalRow.put("actual", totalActualCat);
+totalRow.put("tresMeses", totalT3Cat);
+totalRow.put("unAnio", totalT12Cat);
+totalRow.put("varTrim", varTrim);
+totalRow.put("varAnual", varAnual);
+totalRow.put("esTotal", true);
+
+filas.add(pos, totalRow);
+}
+	
+	private static double getAsDouble(Object v) {
+	    if (v == null) return 0.0;
+	    if (v instanceof Number) return ((Number) v).doubleValue();
+	    try { return Double.parseDouble(String.valueOf(v)); } catch (Exception e) { return 0.0; }
+	}
+
+	private static Double calcVarPct(double nuevo, double base) {
+	    if (Double.isNaN(base) || base == 0.0) return null;
+	    return ((nuevo - base) / base) * 100.0;
 	}
 	
     private Double obtenerActivoTotal(int codigoEntidad, String fechaMayor) {
