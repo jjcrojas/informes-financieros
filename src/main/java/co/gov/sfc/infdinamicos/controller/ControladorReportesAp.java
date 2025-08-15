@@ -42,24 +42,16 @@ public class ControladorReportesAp {
 		List<Map<String, Object>> estadoResultados = consultasAlaBD.obtenerEstadoResultados(codigoEntidad, fechaMayor);
 		
 	    LocalDate f = LocalDate.parse(fechaMayor);
-	    DateTimeFormatter fmtCab = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es"));
-	    String cabActual = YearMonth.from(f).atEndOfMonth().format(fmtCab);
-	    String cabT3     = YearMonth.from(f).minusMonths(3).atEndOfMonth().format(fmtCab);
-	    String cabT12    = YearMonth.from(f).minusYears(1).atEndOfMonth().format(fmtCab);
-		
+	 // Locale Colombia
+	    Locale locCo = Locale.forLanguageTag("es-CO");
+	    DateTimeFormatter fmtCab = DateTimeFormatter.ofPattern("MMM-yy", locCo);
+	 // Cabeceras
+	    String cabActual = YearMonth.from(f).atEndOfMonth().format(fmtCab).toLowerCase(locCo);
+	    String cabT3     = YearMonth.from(f).minusMonths(3).atEndOfMonth().format(fmtCab).toLowerCase(locCo);
+	    String cabT12    = YearMonth.from(f).minusYears(1).atEndOfMonth().format(fmtCab).toLowerCase(locCo);		
         model.addAttribute("datosReporte", datosReporte);
 		model.addAttribute("estadoResultados", estadoResultados);
         model.addAttribute("codigoEntidad", codigoEntidad);
-        
-//        String fechaMenorStr = consultasAlaBD.calcularFechaMenor(fechaMayor);  
-//        LocalDate fechaMenor = LocalDate.parse(fechaMenorStr); // Convertir a LocalDate
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es"));
-//        String fechaMenorFormateada = fechaMenor.format(formatter);
-//        model.addAttribute("fechaMenorFormateada", fechaMenorFormateada);
-        
-//        LocalDate fecha = LocalDate.parse(fechaMayor);
-//        String fechaFormateada = fecha.format(formatter);
-//        model.addAttribute("fechaFormateada", fechaFormateada); // nuevo atributo
         model.addAttribute("fechaMayor", fechaMayor);
         model.addAttribute("cabActual", cabActual);
         model.addAttribute("cabT3", cabT3);
@@ -67,31 +59,6 @@ public class ControladorReportesAp {
         
         return "/reportes/financieros";
 	}    
-    /**/
-    
-    
-	/*
-	 * @GetMapping("/reportes/financieros/datos") public String obtenerDatosInFFin(
-	 * 
-	 * @RequestParam(name = "codigoEntidad") int codigoEntidad,
-	 * 
-	 * @RequestParam(name = "fechaMayor") String fechaMayor, Model model) {
-	 * 
-	 * List<Map<String, Object>> datosReporte =
-	 * consultasAlaBD.obtenerReporteFinanciero(codigoEntidad, fechaMayor);
-	 * model.addAttribute("datosReporte", datosReporte);
-	 * model.addAttribute("codigoEntidad", codigoEntidad);
-	 * model.addAttribute("fechaMayor", fechaMayor);
-	 * 
-	 * return "reportes/financieros"; }
-	 */
-    
-    //
-	/*
-	 * @GetMapping("/reportes/financieros") public String
-	 * mostrarFormularioInfFin(Model model) { return "reportes/financieros"; //
-	 * Nombre del archivo en /templates/reportes/financieros.html }
-	 */
     
 	//Pide código de entidad y fecha
     @GetMapping("/reportes/cuif")

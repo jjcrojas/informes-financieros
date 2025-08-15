@@ -63,13 +63,6 @@ public class ServicioConsultasAlaBD {
 	    return ym.atEndOfMonth().toString(); // yyyy-MM-dd
 	}
 
-	private double asDouble(Object v) {
-	    return (v == null) ? 0.0 : ((Number) v).doubleValue();
-	}
-
-
-	
-	
 	public List<Map<String, Object>> obtenerEstadoResultados(int codigoEntidad, String fecha) {
 
 		Logger log = LoggerFactory.getLogger(getClass());
@@ -261,8 +254,8 @@ public class ServicioConsultasAlaBD {
             fila.put("Nombre_Cuenta", l.getLinea());          // etiqueta de la fila (del CSV)
             String codigoPUC = l.getCodigoPrincipal().orElse("");
             fila.put("Codigo", codigoPUC);                            
-            fila.put("Valor_Actual_Millones", formatoConParentesis(actual));
-            fila.put("Valor_Anterior_Millones", formatoConParentesis(anterior));
+            fila.put("Valor_Actual_Millones", actual);
+            fila.put("Valor_Anterior_Millones", anterior);
             fila.put("Porcentaje_Participacion_Actual", porcentaje);
             fila.put("Variacion_Anual", variacion);
 
@@ -553,14 +546,6 @@ public class ServicioConsultasAlaBD {
 		return fechaMenorAjustada.format(formatter);
 	}
 
-	private String formatoConParentesis(double valor) {
-	    if (valor < 0) {
-	        return "(" + String.format("%,.2f", Math.abs(valor)) + ")";
-	    } else {
-	        return String.format("%,.2f", valor);
-	    }
-	}
-	
 	public byte[] generarReporteExcel(int codigoEntidad, String fechaMayor) throws IOException {
 		List<Map<String, Object>> datosBalance = obtenerBalance(codigoEntidad, fechaMayor);
 
